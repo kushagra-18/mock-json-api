@@ -2,7 +2,7 @@ package com.mock_json.api.services;
 
 import org.springframework.stereotype.Service;
 
-import com.mock_json.api.exceptions.ProjectNotFoundException;
+import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.repositories.ProjectRepository;
 
@@ -17,6 +17,6 @@ public class ProjectService {
 
     public Project findProjectById(Long projectId) {
         return projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project with ID " + projectId + " not found"));
+                .orElseThrow(() -> new NotFoundException("Project with ID " + projectId + " not found"));
     }
 }

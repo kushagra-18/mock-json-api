@@ -59,6 +59,8 @@ public class JsonController {
 
         Json json = jsonService.findJsonByUrl(url);
 
+        jsonService.simulateLatency(json);
+
         ObjectMapper objectMapper = new ObjectMapper();
 
         Object jsonObject;

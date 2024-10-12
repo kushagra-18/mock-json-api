@@ -15,23 +15,19 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "json")
+@Table(name = "urls")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @SoftDelete
-public class Json {
+public class Url {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @ManyToOne
-    @JoinColumn(name = "url_id", nullable = false)
-    private Url jsonModel;
-    
+
     @Builder.Default 
     @Column(nullable = false)
     private Long latency = 0L; 
