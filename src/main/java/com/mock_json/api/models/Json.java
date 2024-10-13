@@ -61,7 +61,6 @@ public class Json {
     @UpdateTimestamp
     @Column(nullable = false)
     @JsonIgnore
-
     private LocalDateTime updatedAt;
 
 }

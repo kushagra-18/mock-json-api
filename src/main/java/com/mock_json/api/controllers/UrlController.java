@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import com.mock_json.api.models.Url;
 import com.mock_json.api.requests.JsonUrlRequest;
 import com.mock_json.api.services.JsonService;
 import com.mock_json.api.services.ProjectService;
+import com.mock_json.api.services.RequestLogService;
 import com.mock_json.api.services.UrlService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +47,9 @@ public class UrlController {
 
     @Autowired
     private UrlService urlService;
+
+    @Autowired
+    private RequestLogService requestLogService;
 
     @PostMapping("/api/v1/url")
     @Transactional
@@ -69,9 +75,16 @@ public class UrlController {
     }
 
     @GetMapping("/**")
-    public ResponseEntity<?> home(HttpServletRequest request) {
+    public ResponseEntity<?> getMockedJSON(HttpServletRequest request) {
 
         String url = jsonService.getUrl(request);
+
+        String method = request.getMethod();
+        
+        String ip = request.getRemoteAddr();
+        
+        int status = 200;
+
 
         Optional<Url> urlData = urlService.findUrlDataByUrl(url);
 
@@ -87,6 +100,11 @@ public class UrlController {
 
         try {
             jsonObject = objectMapper.readValue(jsonDataString, Object.class);
+    
+            requestLogService.saveRequestLogAsync(url, method, ip, status, null);
+            
+            requestLogService.emitPusherEvent(method, url, null, status);
+
             return ResponseEntity.ok(jsonObject);
         } catch (JsonProcessingException e) {
             return ResponseEntity.badRequest().body("Error parsing JSON data: " + e.getMessage());
