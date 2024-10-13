@@ -9,6 +9,7 @@ import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.helpers.StringHelpers;
 import com.mock_json.api.models.Json;
 import com.mock_json.api.models.Project;
+import com.mock_json.api.models.Url;
 import com.mock_json.api.repositories.JsonRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +17,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -30,11 +33,6 @@ public class JsonService {
         this.jsonRepository = jsonRepository;
     }
 
-    public boolean checkURLExists(String url) {
-        // TODO: Implement this method to check if the URL exists
-        return true;
-    }
-
     /**
      * Saves the JSON data to the database.
      * 
@@ -42,13 +40,13 @@ public class JsonService {
      * @param project
      * @return
      */
-    public Json saveJsonData(Json json, Project project) {
+    public Json saveJsonData(Json json, Url url) {
 
         LocalDateTime currTime = LocalDateTime.now();
 
         json.setCreatedAt(currTime);
         json.setUpdatedAt(currTime);
-        json.setProject(project);
+        json.setUrlId(url);
 
         if (json.getLatency() != null) {
             json.setLatency(json.getLatency());
@@ -58,22 +56,12 @@ public class JsonService {
 
     }
 
-    public Json findJsonById(Long jsonId) {
-        return jsonRepository.findById(jsonId)
-                .orElseThrow(() -> new NotFoundException("Json with ID " + jsonId + " not found"));
-    }
-
-    public Json findJsonByUrl(String url) {
-        return jsonRepository.findByUrl(url)
-                .orElseThrow(() -> new NotFoundException("Json with URL " + url + " not found"));
-    }
-
     /**
      * @description: This method simulates the latency of the JSON data.
      * @param json
      */
     public void simulateLatency(Json json) {
-        
+
         Optional.ofNullable(json)
                 .map(Json::getLatency)
                 .ifPresent(latency -> {
@@ -105,5 +93,32 @@ public class JsonService {
         }
 
         return StringHelpers.ltrim(fullPathWithQuery.toString(), '/');
+    }
+
+    /**
+     * Selects a random JSON object from the list of JSON objects.
+     * based on the randomness of each JSON object.
+     * @param jsonList
+     * @return
+     */
+    public Json selectRandomJson(List<Json> jsonList) {
+        int totalWeight = 0;
+        
+        for (Json json : jsonList) {
+            totalWeight += json.getRandomness();
+        }
+
+        Random random = new Random();
+        
+        int randomNumber = random.nextInt(totalWeight);
+
+        for (Json json : jsonList) {
+            randomNumber -= json.getRandomness();
+            if (randomNumber < 0) {
+                return json;
+            }
+        }
+
+        return null;
     }
 }

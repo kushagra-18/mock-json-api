@@ -8,11 +8,14 @@ import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "urls")
@@ -28,35 +31,33 @@ public class Url {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Builder.Default 
-    @Column(nullable = false)
-    private Long latency = 0L; 
-
     @Column(nullable = true)
     private String description;
 
     @Column(nullable = false)
     private String name;
 
-    @Lob
-    @JsonProperty("json_data") 
-    @Column(nullable = false,columnDefinition = "LONGTEXT")
-    private String jsonData;
-
     @Column(nullable = false, unique = true)
     private String url;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
+    @JsonIgnore
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(nullable = false)
+    @JsonIgnore
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
     @JsonBackReference
     private Project project;
+
+    @OneToMany(mappedBy = "urlId", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonProperty("json_list")
+    @JsonManagedReference
+    private List<Json> jsonList;
 
 }

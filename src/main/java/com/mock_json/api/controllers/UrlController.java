@@ -1,7 +1,7 @@
 package com.mock_json.api.controllers;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -17,22 +17,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mock_json.api.models.Json;
 import com.mock_json.api.models.Project;
-import com.mock_json.api.models.Team;
-import com.mock_json.api.repositories.JsonRepository;
-import com.mock_json.api.repositories.ProjectRepository;
+import com.mock_json.api.models.Url;
+import com.mock_json.api.requests.JsonUrlRequest;
 import com.mock_json.api.services.JsonService;
 import com.mock_json.api.services.ProjectService;
+import com.mock_json.api.services.UrlService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.transaction.annotation.Transactional;
 
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @ResponseBody
-public class JsonController {
+public class UrlController {
 
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
@@ -42,12 +42,28 @@ public class JsonController {
     @Autowired
     private JsonService jsonService;
 
-    @PostMapping("/api/v1/json")
-    public ResponseEntity<?> saveJsonData(@Valid @RequestBody Json json) {
+    @Autowired
+    private UrlService urlService;
+
+    @PostMapping("/api/v1/url")
+    @Transactional
+    public ResponseEntity<?> saveJsonData(@Valid @RequestBody JsonUrlRequest jsonUrlRequest) {
+
+        String urlString = jsonUrlRequest.getUrlData().getUrl();
+
+        Optional<Url> existingUrl = urlService.findUrlDataByUrl(urlString);
 
         Project project = projectService.findProjectById(1L);
 
-        Json savedJson = jsonService.saveJsonData(json, project);
+        Url urlData;
+
+        if (existingUrl.isPresent()) {
+            urlData = existingUrl.get();
+        } else {
+            urlData = urlService.saveData(jsonUrlRequest.getUrlData(), project);
+        }
+
+        Json savedJson = jsonService.saveJsonData(jsonUrlRequest.getJsonList().get(0), urlData);
 
         return ResponseEntity.ok(savedJson);
     }
@@ -57,18 +73,20 @@ public class JsonController {
 
         String url = jsonService.getUrl(request);
 
-        Json json = jsonService.findJsonByUrl(url);
+        Optional<Url> urlData = urlService.findUrlDataByUrl(url);
 
-        jsonService.simulateLatency(json);
+        Json jsonData = jsonService.selectRandomJson(urlData.get().getJsonList());
+
+        jsonService.simulateLatency(jsonData);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
         Object jsonObject;
 
-        String jsonData = json.getJsonData();
+        String jsonDataString = jsonData.getJsonData();
 
         try {
-            jsonObject = objectMapper.readValue(jsonData, Object.class);
+            jsonObject = objectMapper.readValue(jsonDataString, Object.class);
             return ResponseEntity.ok(jsonObject);
         } catch (JsonProcessingException e) {
             return ResponseEntity.badRequest().body("Error parsing JSON data: " + e.getMessage());

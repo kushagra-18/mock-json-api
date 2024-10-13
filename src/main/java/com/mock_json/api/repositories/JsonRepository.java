@@ -1,7 +1,5 @@
 package com.mock_json.api.repositories;
 
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import com.mock_json.api.models.Json;
@@ -10,7 +8,6 @@ import com.mock_json.api.models.Json;
 public interface JsonRepository extends JpaRepository<Json, Long> {
 
 
-    Optional<Json> findByUrl(String url);
 
 }
     
