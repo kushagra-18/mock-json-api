@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mock_json.api.annotations.HeaderIntercepted;
+import com.mock_json.api.contexts.HeaderContext;
 import com.mock_json.api.models.Json;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
@@ -33,7 +35,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @ResponseBody
 public class JsonController {
 
-    private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
+    private final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
     @Autowired
     private ProjectService projectService;
@@ -71,6 +73,7 @@ public class JsonController {
     }
 
     @GetMapping("/**")
+    @HeaderIntercepted
     public ResponseEntity<?> getMockedJSON(HttpServletRequest request) {
 
         String url = jsonService.getUrl(request);
@@ -80,6 +83,10 @@ public class JsonController {
         String ip = request.getRemoteAddr();
 
         int status = 200;
+
+        String teamSlug = HeaderContext.getTeamSlug();
+        
+        String projectSlug = HeaderContext.getProjectSlug();
 
         Optional<Url> urlData = urlService.findUrlDataByUrl(url);
 
