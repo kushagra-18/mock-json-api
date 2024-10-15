@@ -1,12 +1,8 @@
 package com.mock_json.api.controllers;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import javax.validation.Valid;
-
-import org.springframework.beans.factory.annotation.Value;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @ResponseBody
-public class UrlController {
+public class JsonController {
 
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
@@ -51,7 +47,7 @@ public class UrlController {
     @Autowired
     private RequestLogService requestLogService;
 
-    @PostMapping("/api/v1/url")
+    @PostMapping("/api/v1/json")
     @Transactional
     public ResponseEntity<?> saveJsonData(@Valid @RequestBody JsonUrlRequest jsonUrlRequest) {
 
@@ -80,11 +76,10 @@ public class UrlController {
         String url = jsonService.getUrl(request);
 
         String method = request.getMethod();
-        
-        String ip = request.getRemoteAddr();
-        
-        int status = 200;
 
+        String ip = request.getRemoteAddr();
+
+        int status = 200;
 
         Optional<Url> urlData = urlService.findUrlDataByUrl(url);
 
@@ -100,15 +95,16 @@ public class UrlController {
 
         try {
             jsonObject = objectMapper.readValue(jsonDataString, Object.class);
-    
-            requestLogService.saveRequestLogAsync(url, method, ip, status, null);
-            
-            requestLogService.emitPusherEvent(method, url, null, status);
 
-            return ResponseEntity.ok(jsonObject);
         } catch (JsonProcessingException e) {
-            return ResponseEntity.badRequest().body("Error parsing JSON data: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error parsing JSON data");
         }
+
+        requestLogService.saveRequestLogAsync(url, method, ip, status, null);
+
+        requestLogService.emitPusherEvent(method, url, null, status);
+
+        return ResponseEntity.ok(jsonObject);
     }
 
 }

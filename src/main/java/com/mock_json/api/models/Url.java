@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.mock_json.api.enums.StatusCode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,6 +40,10 @@ public class Url {
 
     @Column(nullable = false, unique = true)
     private String url;
+
+    // @Column(nullable = false)
+    // @Enumerated(EnumType.STRING) 
+    // private StatusCode status; 
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

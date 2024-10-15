@@ -16,16 +16,13 @@ public class PusherService {
     private final Pusher pusher;
 
     private static final Logger logger = LoggerFactory.getLogger(PusherService.class);
-    
 
     public PusherService(
             @Value("${PUSHER_APP_ID}") String appId,
             @Value("${PUSHER_KEY}") String appKey,
             @Value("${PUSHER_SECRET}") String appSecret,
-            @Value("${PUSHER_CLUSTER}") String appCluster)
-             {
-                logger.info("Pusher Configuration - App ID: {}, Key: {}, Secret: {}, Cluster: {}", 
-                appId, appKey, appSecret, appCluster);
+            @Value("${PUSHER_CLUSTER}") String appCluster) {
+
         pusher = new Pusher(appId, appKey, appSecret);
         pusher.setCluster(appCluster);
         pusher.setEncrypted(true);
