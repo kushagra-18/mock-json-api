@@ -3,9 +3,6 @@ package com.mock_json.api.models;
 import jakarta.persistence.*;
 import lombok.*;
 
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import org.hibernate.annotations.CreationTimestamp;

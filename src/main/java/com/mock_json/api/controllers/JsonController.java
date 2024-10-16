@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mock_json.api.annotations.HeaderIntercepted;
 import com.mock_json.api.contexts.HeaderContext;
+import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.models.Json;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
@@ -88,7 +89,11 @@ public class JsonController {
         
         String projectSlug = HeaderContext.getProjectSlug();
 
-        Optional<Url> urlData = urlService.findUrlDataByUrl(url);
+        Optional<Url> urlData = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, url);
+
+        if(!urlData.isPresent()) {
+             throw new NotFoundException("Url not found");
+        }
 
         Json jsonData = jsonService.selectRandomJson(urlData.get().getJsonList());
 

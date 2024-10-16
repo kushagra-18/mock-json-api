@@ -2,9 +2,9 @@ package com.mock_json.api.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.mock_json.api.controllers.ProjectController;
 import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.helpers.StringHelpers;
 import com.mock_json.api.models.Json;
@@ -12,12 +12,14 @@ import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
 import com.mock_json.api.repositories.JsonRepository;
 import com.mock_json.api.repositories.UrlRepository;
+import com.mock_json.api.specfications.UrlSpecifications;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -37,11 +39,14 @@ public class UrlService {
         return true;
     }
 
-
+    public Optional<Url> findUrlDataByUrlAndTeamAndProject(String teamSlug, String projectSlug, String url) {
+        Specification<Url> spec = UrlSpecifications.hasTeamSlugAndProjectSlugAndUrl(teamSlug, projectSlug, url);
+        return urlRepository.findOne(spec);
+    }
+    
     public Optional<Url> findUrlDataByUrl(String url) {
         return urlRepository.findByUrl(url);
     }
-    
 
     /**
      * Returns the full URL with query string.

@@ -2,7 +2,6 @@ package com.mock_json.api.models;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.Builder.Default;
 
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -14,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.mock_json.api.enums.StatusCode;
 import java.time.LocalDateTime;
 import java.util.List;
 
