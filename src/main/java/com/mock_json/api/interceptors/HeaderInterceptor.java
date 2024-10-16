@@ -22,11 +22,11 @@ public class HeaderInterceptor implements HandlerInterceptor {
             if (handlerMethod.getMethod().isAnnotationPresent(HeaderIntercepted.class) ||
                 handlerMethod.getBeanType().isAnnotationPresent(HeaderIntercepted.class)) {
 
-                // String teamHeader = request.getHeader("X-header-team");
-                // String projectHeader = request.getHeader("X-header-project");
+                String teamHeader = request.getHeader("X-header-team");
+                String projectHeader = request.getHeader("X-header-project");
 
-                String teamHeader = "free";
-                String projectHeader = "kush";
+                // String teamHeader = "free";
+                // String projectHeader = "kush";
 
                 if (teamHeader == null || projectHeader == null) {
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
