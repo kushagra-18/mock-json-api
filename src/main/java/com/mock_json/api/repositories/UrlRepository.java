@@ -13,13 +13,13 @@ import com.mock_json.api.models.Url;
 
 public interface UrlRepository extends JpaRepository<Url, Long>, JpaSpecificationExecutor<Url> {
    
-    @EntityGraph(attributePaths = {"project", "jsonList"})
+    @EntityGraph(attributePaths = {"project", "mockContentList"})
     Optional<Url> findByUrl(Specification<Url> spec);
 
-    @EntityGraph(attributePaths = {"project", "jsonList"})
+    @EntityGraph(attributePaths = {"project", "mockContentList"})
     Optional<Url> findByUrl(String spec);
 
-    @EntityGraph(attributePaths = {"project", "jsonList"})
+    @EntityGraph(attributePaths = {"project", "mockContentList"})
     Optional<Url> findOne(Specification<Url> spec);
 
     

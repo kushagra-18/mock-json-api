@@ -15,14 +15,14 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "json")
+@Table(name = "mock_content")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @SoftDelete
-public class Json {
+public class MockContent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,9 +48,9 @@ public class Json {
     private String name;
 
     @Lob
-    @JsonProperty("json_data")
+    @JsonProperty("data")
     @Column(nullable = false, columnDefinition = "LONGTEXT")
-    private String jsonData;
+    private String data;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

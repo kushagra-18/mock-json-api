@@ -5,7 +5,7 @@ import java.util.List;
 import javax.validation.Valid;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.mock_json.api.models.Json;
+import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Url;
 
 public class JsonUrlRequest {
@@ -14,8 +14,8 @@ public class JsonUrlRequest {
     private Url urlData;
 
     @Valid
-    @JsonProperty("json_list")
-    private List<Json> jsonList;
+    @JsonProperty("mock_content_list")
+    private List<MockContent> mockContentList;
 
     public Url getUrlData() {
         return urlData;
@@ -25,11 +25,11 @@ public class JsonUrlRequest {
         this.urlData = urlData;
     }
 
-    public List<Json> getJsonList() {
-        return jsonList;
+    public List<MockContent> getMockContentList() {
+        return mockContentList;
     }
 
-    public void setJsonList(List<Json> jsonList) {
-        this.jsonList = jsonList;
+    public void setMockContentList(List<MockContent> mockContentList) {
+        this.mockContentList = mockContentList;
     }   
 }

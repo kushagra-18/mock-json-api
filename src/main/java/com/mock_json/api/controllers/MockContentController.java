@@ -16,11 +16,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mock_json.api.annotations.HeaderIntercepted;
 import com.mock_json.api.contexts.HeaderContext;
 import com.mock_json.api.exceptions.NotFoundException;
-import com.mock_json.api.models.Json;
+import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
 import com.mock_json.api.requests.JsonUrlRequest;
-import com.mock_json.api.services.JsonService;
+import com.mock_json.api.services.MockContentService;
 import com.mock_json.api.services.ProjectService;
 import com.mock_json.api.services.RequestLogService;
 import com.mock_json.api.services.UrlService;
@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @ResponseBody
-public class JsonController {
+public class MockContentController {
 
     private final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
@@ -42,7 +42,7 @@ public class JsonController {
     private ProjectService projectService;
 
     @Autowired
-    private JsonService jsonService;
+    private MockContentService mockContentService;
 
     @Autowired
     private UrlService urlService;
@@ -50,9 +50,9 @@ public class JsonController {
     @Autowired
     private RequestLogService requestLogService;
 
-    @PostMapping("/api/v1/json")
+    @PostMapping("/api/v1/mock")
     @Transactional
-    public ResponseEntity<?> saveJsonData(@Valid @RequestBody JsonUrlRequest jsonUrlRequest) {
+    public ResponseEntity<?> saveMockContentData(@Valid @RequestBody JsonUrlRequest jsonUrlRequest) {
 
         String urlString = jsonUrlRequest.getUrlData().getUrl();
 
@@ -68,16 +68,16 @@ public class JsonController {
             urlData = urlService.saveData(jsonUrlRequest.getUrlData(), project);
         }
 
-        Json savedJson = jsonService.saveJsonData(jsonUrlRequest.getJsonList().get(0), urlData);
+        MockContent savedMockedData = mockContentService.saveMockContentData(jsonUrlRequest.getMockContentList().get(0), urlData);
 
-        return ResponseEntity.ok(savedJson);
+        return ResponseEntity.ok(savedMockedData);
     }
 
     @GetMapping("/**")
     @HeaderIntercepted
     public ResponseEntity<?> getMockedJSON(HttpServletRequest request) {
 
-        String url = jsonService.getUrl(request);
+        String url = mockContentService.getUrl(request);
 
         String method = request.getMethod();
 
@@ -95,18 +95,18 @@ public class JsonController {
              throw new NotFoundException("Url not found");
         }
 
-        Json jsonData = jsonService.selectRandomJson(urlData.get().getJsonList());
+        MockContent mockContentData = mockContentService.selectRandomJson(urlData.get().getMockContentList());
 
-        jsonService.simulateLatency(jsonData);
+        mockContentService.simulateLatency(mockContentData);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
         Object jsonObject;
 
-        String jsonDataString = jsonData.getJsonData();
+        String mockContentDataString = mockContentData.getData();
 
         try {
-            jsonObject = objectMapper.readValue(jsonDataString, Object.class);
+            jsonObject = objectMapper.readValue(mockContentDataString, Object.class);
 
         } catch (JsonProcessingException e) {
             return ResponseEntity.badRequest().body("Error parsing JSON data");

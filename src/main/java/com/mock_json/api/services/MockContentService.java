@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.mock_json.api.helpers.StringHelpers;
-import com.mock_json.api.models.Json;
+import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Url;
-import com.mock_json.api.repositories.JsonRepository;
+import com.mock_json.api.repositories.MockContentRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -18,14 +18,14 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class JsonService {
+public class MockContentService {
 
-    private final JsonRepository jsonRepository;
+    private final MockContentRepository mockContentRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(JsonService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MockContentService.class);
 
-    public JsonService(JsonRepository jsonRepository) {
-        this.jsonRepository = jsonRepository;
+    public MockContentService(MockContentRepository mockContentRepository) {
+        this.mockContentRepository = mockContentRepository;
     }
 
     /**
@@ -35,7 +35,7 @@ public class JsonService {
      * @param project
      * @return
      */
-    public Json saveJsonData(Json json, Url url) {
+    public MockContent saveMockContentData(MockContent json, Url url) {
 
         LocalDateTime currTime = LocalDateTime.now();
 
@@ -47,7 +47,7 @@ public class JsonService {
             json.setLatency(json.getLatency());
         }
 
-        return jsonRepository.save(json);
+        return mockContentRepository.save(json);
 
     }
 
@@ -55,10 +55,10 @@ public class JsonService {
      * @description: This method simulates the latency of the JSON data.
      * @param json
      */
-    public void simulateLatency(Json json) {
+    public void simulateLatency(MockContent json) {
 
         Optional.ofNullable(json)
-                .map(Json::getLatency)
+                .map(MockContent::getLatency)
                 .ifPresent(latency -> {
                     if (latency > 0) {
                         try {
@@ -93,13 +93,13 @@ public class JsonService {
     /**
      * Selects a random JSON object from the list of JSON objects.
      * based on the randomness of each JSON object.
-     * @param jsonList
+     * @param mockContentList
      * @return
      */
-    public Json selectRandomJson(List<Json> jsonList) {
+    public MockContent selectRandomJson(List<MockContent> mockContentList) {
         int totalWeight = 0;
         
-        for (Json json : jsonList) {
+        for (MockContent json : mockContentList) {
             totalWeight += json.getRandomness();
         }
 
@@ -107,7 +107,7 @@ public class JsonService {
         
         int randomNumber = random.nextInt(totalWeight);
 
-        for (Json json : jsonList) {
+        for (MockContent json : mockContentList) {
             randomNumber -= json.getRandomness();
             if (randomNumber < 0) {
                 return json;

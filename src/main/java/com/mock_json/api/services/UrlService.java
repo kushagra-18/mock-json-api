@@ -7,10 +7,10 @@ import org.springframework.stereotype.Service;
 
 import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.helpers.StringHelpers;
-import com.mock_json.api.models.Json;
+import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
-import com.mock_json.api.repositories.JsonRepository;
+import com.mock_json.api.repositories.MockContentRepository;
 import com.mock_json.api.repositories.UrlRepository;
 import com.mock_json.api.specfications.UrlSpecifications;
 
@@ -28,7 +28,7 @@ public class UrlService {
 
     private final UrlRepository urlRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(JsonService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MockContentService.class);
 
     public UrlService(UrlRepository urlRepository) {
         this.urlRepository = urlRepository;

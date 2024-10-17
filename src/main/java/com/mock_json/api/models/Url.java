@@ -59,8 +59,8 @@ public class Url {
     private Project project;
 
     @OneToMany(mappedBy = "urlId", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonProperty("json_list")
+    @JsonProperty("mock_content_list")
     @JsonManagedReference
-    private List<Json> jsonList;
+    private List<MockContent> mockContentList;
 
 }
