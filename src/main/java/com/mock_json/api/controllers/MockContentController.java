@@ -15,11 +15,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mock_json.api.annotations.HeaderIntercepted;
 import com.mock_json.api.contexts.HeaderContext;
+import com.mock_json.api.dtos.MockContentUrlDto;
 import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
-import com.mock_json.api.requests.JsonUrlRequest;
+import com.mock_json.api.requests.cockContentUrlDto;
 import com.mock_json.api.services.MockContentService;
 import com.mock_json.api.services.ProjectService;
 import com.mock_json.api.services.RequestLogService;
@@ -27,13 +28,14 @@ import com.mock_json.api.services.UrlService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @ResponseBody
+@Validated
 public class MockContentController {
 
     private final Logger logger = LoggerFactory.getLogger(HomeController.class);
@@ -52,9 +54,9 @@ public class MockContentController {
 
     @PostMapping("/api/v1/mock")
     @Transactional
-    public ResponseEntity<?> saveMockContentData(@Valid @RequestBody JsonUrlRequest jsonUrlRequest) {
+    public ResponseEntity<?> saveMockContentData(@Valid @RequestBody MockContentUrlDto cockContentUrlDto) {
 
-        String urlString = jsonUrlRequest.getUrlData().getUrl();
+        String urlString = cockContentUrlDto.getUrlData().getUrl();
 
         Optional<Url> existingUrl = urlService.findUrlDataByUrl(urlString);
 
@@ -65,10 +67,10 @@ public class MockContentController {
         if (existingUrl.isPresent()) {
             urlData = existingUrl.get();
         } else {
-            urlData = urlService.saveData(jsonUrlRequest.getUrlData(), project);
+            urlData = urlService.saveData(cockContentUrlDto.getUrlData(), project);
         }
 
-        MockContent savedMockedData = mockContentService.saveMockContentData(jsonUrlRequest.getMockContentList().get(0), urlData);
+        MockContent savedMockedData = mockContentService.saveMockContentData(cockContentUrlDto.getMockContentList().get(0), urlData);
 
         return ResponseEntity.ok(savedMockedData);
     }
