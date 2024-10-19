@@ -1,5 +1,7 @@
 package com.mock_json.api.controllers;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -7,6 +9,7 @@ import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +23,6 @@ import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
-import com.mock_json.api.requests.cockContentUrlDto;
 import com.mock_json.api.services.MockContentService;
 import com.mock_json.api.services.ProjectService;
 import com.mock_json.api.services.RequestLogService;
@@ -32,6 +34,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.HttpStatus;
+
 
 @RestController
 @ResponseBody
@@ -52,27 +56,32 @@ public class MockContentController {
     @Autowired
     private RequestLogService requestLogService;
 
+    @Value("${BASE_URL}")
+    private String baseUrl;
+
     @PostMapping("/api/v1/mock")
     @Transactional
-    public ResponseEntity<?> saveMockContentData(@Valid @RequestBody MockContentUrlDto cockContentUrlDto) {
+    public ResponseEntity<Map<String, Object>> saveMockContentData(
+            @Valid @RequestBody MockContentUrlDto mockContentUrlDto) {
 
-        String urlString = cockContentUrlDto.getUrlData().getUrl();
+        Map<String, Object> response = new HashMap<>();
 
-        Optional<Url> existingUrl = urlService.findUrlDataByUrl(urlString);
+        String urlString = mockContentUrlDto.getUrlData().getUrl();
 
-        Project project = projectService.findProjectById(1L);
+        Url urlData = urlService.findUrlDataByUrl(urlString)
+                .orElseGet(
+                        () -> urlService.saveData(mockContentUrlDto.getUrlData(), projectService.findProjectById(1L)));
 
-        Url urlData;
+        MockContent mockContent = mockContentUrlDto.getMockContentList().get(0);
+        MockContent savedMockedData = mockContentService.saveMockContentData(mockContent, urlData);
 
-        if (existingUrl.isPresent()) {
-            urlData = existingUrl.get();
-        } else {
-            urlData = urlService.saveData(cockContentUrlDto.getUrlData(), project);
-        }
+        String mockedUrl = urlString + ".free." + baseUrl;
 
-        MockContent savedMockedData = mockContentService.saveMockContentData(cockContentUrlDto.getMockContentList().get(0), urlData);
+        response.put("url", mockedUrl);
+        response.put("data", savedMockedData);
+        response.put("status_code", HttpStatus.CREATED.value());
 
-        return ResponseEntity.ok(savedMockedData);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/**")
@@ -85,16 +94,14 @@ public class MockContentController {
 
         String ip = request.getRemoteAddr();
 
-        int status = 200;
-
         String teamSlug = HeaderContext.getTeamSlug();
-        
+
         String projectSlug = HeaderContext.getProjectSlug();
 
         Optional<Url> urlData = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, url);
 
-        if(!urlData.isPresent()) {
-             throw new NotFoundException("Url not found");
+        if (!urlData.isPresent()) {
+            throw new NotFoundException("Url not found");
         }
 
         MockContent mockContentData = mockContentService.selectRandomJson(urlData.get().getMockContentList());
@@ -114,11 +121,10 @@ public class MockContentController {
             return ResponseEntity.badRequest().body("Error parsing JSON data");
         }
 
-        requestLogService.saveRequestLogAsync(url, method, ip, status, null);
+        requestLogService.saveRequestLogAsync(url, method, ip, HttpStatus.OK.value(), null);
 
-        requestLogService.emitPusherEvent(method, url, null, status);
+        requestLogService.emitPusherEvent(method, url, null, HttpStatus.OK.value());
 
         return ResponseEntity.ok(jsonObject);
     }
-
 }
