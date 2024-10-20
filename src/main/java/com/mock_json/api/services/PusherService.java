@@ -1,6 +1,5 @@
 package com.mock_json.api.services;
 
-import com.mock_json.api.controllers.HomeController;
 import com.pusher.rest.Pusher;
 
 import org.slf4j.Logger;

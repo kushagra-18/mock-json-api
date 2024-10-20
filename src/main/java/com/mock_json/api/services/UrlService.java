@@ -2,31 +2,28 @@ package com.mock_json.api.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.helpers.StringHelpers;
-import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
-import com.mock_json.api.repositories.MockContentRepository;
 import com.mock_json.api.repositories.UrlRepository;
 import com.mock_json.api.specfications.UrlSpecifications;
-
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Service
 public class UrlService {
 
     private final UrlRepository urlRepository;
+
+    @Autowired
+    private RedisService redisService;
 
     private static final Logger logger = LoggerFactory.getLogger(MockContentService.class);
 
@@ -34,16 +31,11 @@ public class UrlService {
         this.urlRepository = urlRepository;
     }
 
-    public boolean checkURLExists(String url) {
-        // TODO: Implement this method to check if the URL exists
-        return true;
-    }
-
     public Optional<Url> findUrlDataByUrlAndTeamAndProject(String teamSlug, String projectSlug, String url) {
         Specification<Url> spec = UrlSpecifications.hasTeamSlugAndProjectSlugAndUrl(teamSlug, projectSlug, url);
         return urlRepository.findOne(spec);
     }
-    
+
     public Optional<Url> findUrlDataByUrl(String url) {
         return urlRepository.findByUrl(url);
     }
@@ -76,4 +68,34 @@ public class UrlService {
 
         return urlRepository.save(url);
     }
+
+    /**
+     * Checks if the IP has exceeded the rate limit for the given URL.
+     * 
+     * @param ip  The IP address of the request.
+     * @param url The URL object containing rate limit information.
+     * @return true if the rate limit is exceeded, false otherwise.
+     */
+    public boolean isRateLimited(String ip, String url, Integer allowedRequests, Long timeWindow) {
+
+        if (allowedRequests != null && timeWindow != null) {
+
+            String sanitizedIp = ip.replaceAll(":", ".");
+
+            String redisKey = redisService.createRedisKey("rate_limit",sanitizedIp, url);
+
+            Long requestCount = redisService.incrementValue(redisKey, 1);
+
+            long count = (requestCount != null) ? requestCount : 0L; 
+
+            if (count == 1) {
+                redisService.expire(redisKey, Duration.ofSeconds(timeWindow));
+            }
+
+            return count > allowedRequests;
+        }
+
+        return false;
+    }
+
 }

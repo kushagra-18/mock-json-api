@@ -36,6 +36,13 @@ public class Url {
     @Column(nullable = false)
     private String name;
 
+    // for mocking rate limits
+    @Column(nullable = true)
+    private  Integer requests;
+
+    @Column(nullable = true)
+    private  Long time;
+
     @Column(nullable = false, unique = true)
     private String url;
 

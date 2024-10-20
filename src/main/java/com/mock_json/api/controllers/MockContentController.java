@@ -21,7 +21,6 @@ import com.mock_json.api.contexts.HeaderContext;
 import com.mock_json.api.dtos.MockContentUrlDto;
 import com.mock_json.api.exceptions.NotFoundException;
 import com.mock_json.api.models.MockContent;
-import com.mock_json.api.models.Project;
 import com.mock_json.api.models.Url;
 import com.mock_json.api.services.MockContentService;
 import com.mock_json.api.services.ProjectService;
@@ -103,6 +102,14 @@ public class MockContentController {
         if (!urlData.isPresent()) {
             throw new NotFoundException("Url not found");
         }
+
+        Integer allowedRequests = urlData.get().getRequests();
+        Long timeWindow = urlData.get().getTime();
+
+        if (urlService.isRateLimited(ip, url, allowedRequests, timeWindow)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Rate limit exceeded");
+        }
+    
 
         MockContent mockContentData = mockContentService.selectRandomJson(urlData.get().getMockContentList());
 
