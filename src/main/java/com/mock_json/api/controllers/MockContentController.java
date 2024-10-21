@@ -20,6 +20,7 @@ import com.mock_json.api.annotations.HeaderIntercepted;
 import com.mock_json.api.contexts.HeaderContext;
 import com.mock_json.api.dtos.MockContentUrlDto;
 import com.mock_json.api.exceptions.NotFoundException;
+import com.mock_json.api.exceptions.responses.RateLimitException;
 import com.mock_json.api.models.MockContent;
 import com.mock_json.api.models.Url;
 import com.mock_json.api.services.MockContentService;
@@ -83,6 +84,7 @@ public class MockContentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    
     @GetMapping("/**")
     @HeaderIntercepted
     public ResponseEntity<?> getMockedJSON(HttpServletRequest request) {
@@ -107,9 +109,8 @@ public class MockContentController {
         Long timeWindow = urlData.get().getTime();
 
         if (urlService.isRateLimited(ip, url, allowedRequests, timeWindow)) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Rate limit exceeded");
+            throw new RateLimitException("Rate limit exceeded, Please try again later.");
         }
-    
 
         MockContent mockContentData = mockContentService.selectRandomJson(urlData.get().getMockContentList());
 

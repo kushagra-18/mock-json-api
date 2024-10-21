@@ -82,7 +82,7 @@ public class UrlService {
 
             String sanitizedIp = ip.replaceAll(":", ".");
 
-            String redisKey = redisService.createRedisKey("rate_limit",sanitizedIp, url);
+            String redisKey = redisService.createRedisKey("rate_limit_custom",sanitizedIp, url);
 
             Long requestCount = redisService.incrementValue(redisKey, 1);
 

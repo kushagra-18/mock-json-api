@@ -1,20 +1,25 @@
 package com.mock_json.api.exceptions.responses;
 
-
 import java.time.LocalDateTime;
 
 public class ErrorResponse {
+
     private LocalDateTime timestamp;
     private int status;
     private String error;
     private String message;
     private String path;
-
-    public ErrorResponse(int status, String error, String message, String path) {
+    
+    public ErrorResponse(
+            int status, String error, String message, String path, String appEnv) {
         this.timestamp = LocalDateTime.now();
         this.status = status;
         this.error = error;
-        this.message = message;
+        if (status == 500 && "production".equalsIgnoreCase(appEnv)) {
+            this.message = "Internal Server Error"; 
+        } else {
+            this.message = message; 
+        }
         this.path = path;
     }
 
@@ -31,6 +36,7 @@ public class ErrorResponse {
     }
 
     public String getMessage() {
+
         return message;
     }
 
