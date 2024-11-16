@@ -2,6 +2,15 @@ const express = require('express');
 const axios = require('axios');
 require('dotenv').config({ path: '../.env' });
 
+const cors = require('cors');
+
+const corsOptions = {
+    origin: false, 
+};
+
+app.use(cors(corsOptions));
+
+
 const app = express();
 const port = 3001;
 
