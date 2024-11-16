@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mock_json.mock_api.annotations.HeaderIntercepted;
 import com.mock_json.mock_api.constants.ResponseMessages;
-import com.mock_json.mock_api.contexts.HeaderContext;
 import com.mock_json.mock_api.dtos.MockContentUrlDto;
 import com.mock_json.mock_api.exceptions.responses.RateLimitException;
 import com.mock_json.mock_api.models.MockContent;
