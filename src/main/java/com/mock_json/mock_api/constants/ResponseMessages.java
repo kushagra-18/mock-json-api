@@ -21,6 +21,7 @@ public class ResponseMessages {
 
     // 
     public static final String NO_CONTENT_URL = "Oopsie! 🐾 Looks like you stumbled upon an uncharted path. No mock API here yet—let’s create one and bring this URL to life";
+    public static final String NO_PROJECT = "Oops! We couldn't find that project. Are you sure it exists? 🧐";
 
    
 }

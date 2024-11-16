@@ -22,7 +22,6 @@ import com.mock_json.mock_api.annotations.HeaderIntercepted;
 import com.mock_json.mock_api.constants.ResponseMessages;
 import com.mock_json.mock_api.contexts.HeaderContext;
 import com.mock_json.mock_api.dtos.MockContentUrlDto;
-import com.mock_json.mock_api.exceptions.NotFoundException;
 import com.mock_json.mock_api.exceptions.responses.RateLimitException;
 import com.mock_json.mock_api.models.MockContent;
 import com.mock_json.mock_api.models.Url;
@@ -103,11 +102,13 @@ public class MockContentController {
 
         Optional<Url> urlData = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, url);
 
+        String channelId = urlData.get().getProject().getChannelId();
+
         if (!urlData.isPresent()) {
 
             requestLogService.saveRequestLogAsync(ip, null, method, url, HttpStatus.OK.value());
 
-            requestLogService.emitPusherEvent(ip, null, method, url, HttpStatus.OK.value());
+            requestLogService.emitPusherEvent(ip, null, method, url, HttpStatus.OK.value(),channelId);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(ResponseMessages.NO_CONTENT_URL);
@@ -140,7 +141,7 @@ public class MockContentController {
 
         requestLogService.saveRequestLogAsync(ip, urlData.get(), method, url, HttpStatus.OK.value());
 
-        requestLogService.emitPusherEvent(ip, urlData.get(), method, url, HttpStatus.OK.value());
+        requestLogService.emitPusherEvent(ip, urlData.get(), method, url, HttpStatus.OK.value(),channelId);
 
         return ResponseEntity.ok(jsonObject);
     }

@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.mock_json.mock_api.constants.PusherChannels;
 import com.mock_json.mock_api.dtos.PusherRequestEventDto;
 import com.mock_json.mock_api.models.Project;
 import com.mock_json.mock_api.models.RequestLog;
@@ -42,9 +43,9 @@ public class RequestLogService {
     }
     
     @Async
-    public void emitPusherEvent(String ip, Url url,String method, String urlString, int status) {
+    public void emitPusherEvent(String ip, Url url,String method, String urlString, int status,String channelId) {
        
-        if (ip == null || url == null) {
+        if (ip == null || url == null  || channelId == null) {
             return;
         }
     
@@ -54,7 +55,9 @@ public class RequestLogService {
     
         PusherRequestEventDto eventData = new PusherRequestEventDto(method, urlString, urlId, ip, status);
 
-        pusherService.trigger("project-events", "project-created", eventData);
+        String channelName = PusherChannels.REQUEST_CHANNEL + channelId;
+
+        pusherService.trigger(channelName, "mock-url-created", eventData);
     }
 
 }

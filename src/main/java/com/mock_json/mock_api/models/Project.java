@@ -7,6 +7,7 @@ import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -33,10 +34,19 @@ public class Project {
     private String slug;
 
     @CreationTimestamp
+    @JsonProperty("created_at")
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    @JsonProperty("channel_id")
+    private String ChannelId;
+
+    @Column(nullable = true,columnDefinition = "TEXT")
+    private String description;
+
     @UpdateTimestamp
+    @JsonProperty("updated_at")
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 

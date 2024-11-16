@@ -28,7 +28,7 @@ public class HeaderInterceptor implements HandlerInterceptor {
                 // String projectHeader = request.getHeader("X-header-project");
 
                 String teamHeader = "free";
-                String projectHeader = "kush";
+                String projectHeader = "yahoo";
 
                 if (teamHeader == null || projectHeader == null) {
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
