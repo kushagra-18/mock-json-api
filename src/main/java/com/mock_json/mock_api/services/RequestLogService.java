@@ -2,12 +2,15 @@ package com.mock_json.mock_api.services;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.mock_json.mock_api.dtos.PusherRequestEventDto;
 import com.mock_json.mock_api.models.Project;
 import com.mock_json.mock_api.models.RequestLog;
+import com.mock_json.mock_api.models.Url;
 import com.mock_json.mock_api.repositories.RequestLogRepository;
 
 
@@ -23,30 +26,35 @@ public class RequestLogService {
     }
 
     @Async
-    public void saveRequestLogAsync(String url, String method,String ip, int status, Project project) {
+    public void saveRequestLogAsync(String ip, Url url,String method, String urlString, int status) {
+
+        Long urlId = (url != null) ? url.getId() : -1L;
 
         RequestLog requestLog = RequestLog.builder()
-                .url(url)
-                .method(method)
                 .ip(ip)
+                .urlId(urlId)
+                .url(urlString)
+                .method(method)
                 .status(status)
-                // .project(project)
                 .build();
 
         requestLogRepository.save(requestLog);
     }
     
     @Async
-    public void emitPusherEvent(String method, String url, Project project, int status) {
+    public void emitPusherEvent(String ip, Url url,String method, String urlString, int status) {
        
-        Map<String, Object> data = new HashMap<>();
-        data.put("method", method);
-        // data.put("url", url);
-        // // data.put("projectId", project.getId());
-        // // data.put("projectName", project.getName()); 
-        data.put("status", status);
+        if (ip == null || url == null) {
+            return;
+        }
+    
+        Long urlId = Optional.ofNullable(url)
+                             .map(Url::getId)
+                             .orElse(-1L);  
+    
+        PusherRequestEventDto eventData = new PusherRequestEventDto(method, urlString, urlId, ip, status);
 
-        pusherService.trigger("project-events", "project-created", data);
+        pusherService.trigger("project-events", "project-created", eventData);
     }
 
 }

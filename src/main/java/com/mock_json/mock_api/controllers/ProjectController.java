@@ -37,7 +37,7 @@ public class ProjectController {
 
         Project savedProject = projectRepository.save(project);
 
-        logger.info("Free project created: {}", savedProject);
+        logger.info("Free project created", savedProject);
 
         return ResponseEntity.ok(savedProject);
     }

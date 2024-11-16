@@ -1,6 +1,7 @@
 package com.mock_json.mock_api.controllers;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,11 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mock_json.mock_api.annotations.HeaderIntercepted;
+import com.mock_json.mock_api.constants.ResponseMessages;
 import com.mock_json.mock_api.contexts.HeaderContext;
 import com.mock_json.mock_api.dtos.MockContentUrlDto;
 import com.mock_json.mock_api.exceptions.NotFoundException;
@@ -35,7 +38,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.HttpStatus;
-
 
 @RestController
 @ResponseBody
@@ -59,32 +61,32 @@ public class MockContentController {
     @Value("${BASE_URL}")
     private String baseUrl;
 
-    @PostMapping("/api/v1/mock")
+    @PostMapping("/api/v1/mock/{projectSlug}")
     @Transactional
     public ResponseEntity<Map<String, Object>> saveMockContentData(
-            @Valid @RequestBody MockContentUrlDto mockContentUrlDto) {
+            @Valid @RequestBody MockContentUrlDto mockContentUrlDto, @PathVariable String projectSlug) {
 
         Map<String, Object> response = new HashMap<>();
 
         String urlString = mockContentUrlDto.getUrlData().getUrl();
 
-        Url urlData = urlService.findUrlDataByUrl(urlString)
+        Url urlData = urlService.findUrlDataByUrlAndProjectSlug(projectSlug, urlString)
                 .orElseGet(
-                        () -> urlService.saveData(mockContentUrlDto.getUrlData(), projectService.findProjectById(1L)));
+                        () -> urlService.saveData(mockContentUrlDto.getUrlData(),
+                                projectService.findProjectBySlug(projectSlug)));
 
-        MockContent mockContent = mockContentUrlDto.getMockContentList().get(0);
-        MockContent savedMockedData = mockContentService.saveMockContentData(mockContent, urlData);
+        List<MockContent> mockContentList = mockContentUrlDto.getMockContentList();
+        List<MockContent> savedMockedDataList = mockContentService.saveMockContentData(mockContentList, urlData);
 
-        String mockedUrl = urlString + ".free." + baseUrl;
+        String mockedUrl = projectSlug + ".free." + baseUrl + "/" + urlString;
 
         response.put("url", mockedUrl);
-        response.put("data", savedMockedData);
+        response.put("data", savedMockedDataList);
         response.put("status_code", HttpStatus.CREATED.value());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    
     @GetMapping("/**")
     @HeaderIntercepted
     public ResponseEntity<?> getMockedJSON(HttpServletRequest request) {
@@ -102,14 +104,21 @@ public class MockContentController {
         Optional<Url> urlData = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, url);
 
         if (!urlData.isPresent()) {
-            throw new NotFoundException("Url not found");
+
+            requestLogService.saveRequestLogAsync(ip, null, method, url, HttpStatus.OK.value());
+
+            requestLogService.emitPusherEvent(ip, null, method, url, HttpStatus.OK.value());
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(ResponseMessages.NO_CONTENT_URL);
         }
 
         Integer allowedRequests = urlData.get().getRequests();
+
         Long timeWindow = urlData.get().getTime();
 
         if (urlService.isRateLimited(ip, url, allowedRequests, timeWindow)) {
-            throw new RateLimitException("Rate limit exceeded, Please try again later.");
+            throw new RateLimitException(ResponseMessages.RATE_LIMIT_EXCEEDED);
         }
 
         MockContent mockContentData = mockContentService.selectRandomJson(urlData.get().getMockContentList());
@@ -126,12 +135,12 @@ public class MockContentController {
             jsonObject = objectMapper.readValue(mockContentDataString, Object.class);
 
         } catch (JsonProcessingException e) {
-            return ResponseEntity.badRequest().body("Error parsing JSON data");
+            return ResponseEntity.badRequest().body(ResponseMessages.JSON_PARSE_ERROR);
         }
 
-        requestLogService.saveRequestLogAsync(url, method, ip, HttpStatus.OK.value(), null);
+        requestLogService.saveRequestLogAsync(ip, urlData.get(), method, url, HttpStatus.OK.value());
 
-        requestLogService.emitPusherEvent(method, url, null, HttpStatus.OK.value());
+        requestLogService.emitPusherEvent(ip, urlData.get(), method, url, HttpStatus.OK.value());
 
         return ResponseEntity.ok(jsonObject);
     }

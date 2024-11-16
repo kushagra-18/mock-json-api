@@ -1,46 +1,43 @@
 package com.mock_json.mock_api.models;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
-import org.hibernate.annotations.CreationTimestamp;
+import jakarta.persistence.EntityListeners;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "request_logs")
+@Document(collection = "request_logs") 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class RequestLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false)
-    private String url;
-
-    @Column(nullable = false)
-    private String method;
-
-    @Column(nullable = false)
     private String ip;
 
-    @Column(nullable = false)
-    private int status;
-
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @CreatedDate 
+    @Field("created_at") 
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "project_id")
-    @JsonBackReference
-    private Project project;
+    @Field("url_id") 
+    private Long urlId;
 
+    @Field("method") 
+    private String method;
+
+    @Field("status")    
+    private int status; 
+
+    @Field("url") 
+    private String url;
 }

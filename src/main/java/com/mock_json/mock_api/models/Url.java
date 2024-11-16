@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.NaturalId;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,7 +44,8 @@ public class Url {
     @Column(nullable = true)
     private  Long time;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = false)
+    @NaturalId
     private String url;
 
     // @Column(nullable = false)
@@ -63,6 +65,7 @@ public class Url {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "project_id")
     @JsonBackReference
+    @NaturalId
     private Project project;
 
     @OneToMany(mappedBy = "urlId", cascade = CascadeType.ALL, fetch = FetchType.EAGER)

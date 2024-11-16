@@ -24,6 +24,11 @@ public class UrlSpecifications {
         };
     }
 
+    public static Specification<Url> hasProjectSlugAndUrl(String projectSlug, String url) {
+        return hasProjectSlug(projectSlug)
+                .and(hasUrl(url));
+    }
+
     public static Specification<Url> hasTeamSlugAndProjectSlugAndUrl(String teamSlug, String projectSlug, String url) {
         return hasTeamSlug(teamSlug)
                 .and(hasProjectSlug(projectSlug))

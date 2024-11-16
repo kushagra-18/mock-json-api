@@ -41,6 +41,11 @@ public class UrlService {
         return urlRepository.findByUrl(url);
     }
 
+    public Optional<Url> findUrlDataByUrlAndProjectSlug(String projectSlug, String url) {
+        Specification<Url> spec = UrlSpecifications.hasProjectSlugAndUrl(projectSlug, url);
+        return urlRepository.findOne(spec);
+    }
+
     /**
      * Returns the full URL with query string.
      * which was recieved in the request

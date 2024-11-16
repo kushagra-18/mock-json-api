@@ -19,4 +19,9 @@ public class ProjectService {
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new NotFoundException("Project with ID " + projectId + " not found"));
     }
+
+    public Project findProjectBySlug(String projectSlug) {
+        return projectRepository.findBySlug(projectSlug)
+                .orElseThrow(() -> new NotFoundException("Project with slug " + projectSlug + " not found"));
+    }
 }

@@ -35,20 +35,20 @@ public class MockContentService {
      * @param project
      * @return
      */
-    public MockContent saveMockContentData(MockContent json, Url url) {
-
+    public List<MockContent> saveMockContentData(List<MockContent> mockContentList, Url url) {
         LocalDateTime currTime = LocalDateTime.now();
 
-        json.setCreatedAt(currTime);
-        json.setUpdatedAt(currTime);
-        json.setUrlId(url);
+        for (MockContent mockContent : mockContentList) {
+            mockContent.setCreatedAt(currTime);
+            mockContent.setUpdatedAt(currTime);
+            mockContent.setUrlId(url);
 
-        if (json.getLatency() != null) {
-            json.setLatency(json.getLatency());
+            if (mockContent.getLatency() != null) {
+                mockContent.setLatency(mockContent.getLatency());
+            }
         }
 
-        return mockContentRepository.save(json);
-
+        return mockContentRepository.saveAll(mockContentList);
     }
 
     /**
@@ -93,18 +93,19 @@ public class MockContentService {
     /**
      * Selects a random JSON object from the list of JSON objects.
      * based on the randomness of each JSON object.
+     * 
      * @param mockContentList
      * @return
      */
     public MockContent selectRandomJson(List<MockContent> mockContentList) {
         int totalWeight = 0;
-        
+
         for (MockContent json : mockContentList) {
             totalWeight += json.getRandomness();
         }
 
         Random random = new Random();
-        
+
         int randomNumber = random.nextInt(totalWeight);
 
         for (MockContent json : mockContentList) {
