@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import jakarta.persistence.EntityListeners;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Document(collection = "request_logs") 
 @Getter
@@ -18,7 +19,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class RequestLog {
+public class RequestLog{
 
     @Id
     private String id;
@@ -31,6 +32,9 @@ public class RequestLog {
 
     @Field("url_id") 
     private Long urlId;
+
+    @Field("project_id") 
+    private Long projectId;
 
     @Field("method") 
     private String method;

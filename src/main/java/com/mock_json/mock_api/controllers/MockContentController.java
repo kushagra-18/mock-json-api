@@ -23,6 +23,7 @@ import com.mock_json.mock_api.constants.ResponseMessages;
 import com.mock_json.mock_api.dtos.MockContentUrlDto;
 import com.mock_json.mock_api.exceptions.responses.RateLimitException;
 import com.mock_json.mock_api.models.MockContent;
+import com.mock_json.mock_api.models.Project;
 import com.mock_json.mock_api.models.Url;
 import com.mock_json.mock_api.services.MockContentService;
 import com.mock_json.mock_api.services.ProjectService;
@@ -68,7 +69,7 @@ public class MockContentController {
 
     @Value("${GLOBAL_MAX_ALLOWED_REQUESTS}")
     private Integer maxAllowedRequests;
-    
+
     public Integer getMaxAllowedRequests() {
         return maxAllowedRequests;
     }
@@ -95,6 +96,7 @@ public class MockContentController {
                                 projectService.findProjectBySlug(projectSlug)));
 
         List<MockContent> mockContentList = mockContentUrlDto.getMockContentList();
+        
         List<MockContent> savedMockedDataList = mockContentService.saveMockContentData(mockContentList, urlData);
 
         String mockedUrl = projectSlug + ".free." + baseUrl + "/" + urlString;
@@ -114,62 +116,67 @@ public class MockContentController {
             HttpServletRequest request) {
 
         byte[] decodedBytes = Base64.getDecoder().decode(url);
-        
         String decodedUrl = new String(decodedBytes);
 
-        if(this.globalRateLimit(teamSlug,projectSlug)){
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ResponseMessages.GLOBAL_RATE_LIMIT_EXCEEDED);
+        if (this.globalRateLimit(teamSlug, projectSlug)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(ResponseMessages.GLOBAL_RATE_LIMIT_EXCEEDED);
         }
 
         String method = request.getMethod();
 
         String ip = request.getRemoteAddr();
 
-        Optional<Url> urlData = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, decodedUrl);
+        Optional<Url> urlDataOpt = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, decodedUrl);
 
-        if (!urlData.isPresent()) {
+        // If URL data is not found, handle the response directly
+        if (urlDataOpt.isEmpty()) {
+            Project project = projectService.getDataBySlugAndTeamSlug(teamSlug, projectSlug);
 
-            String channelId = projectService.getChannelIdBySlugAndTeamSlug(teamSlug, projectSlug).getChannelId();
+            Long projectId = project.getId();
+            
+            String channelId = project.getChannelId();
 
-            requestLogService.saveRequestLogAsync(ip, null, method, decodedUrl, HttpStatus.OK.value());
+            requestLogService.saveRequestLogAsync(ip, null, method, decodedUrl, HttpStatus.OK.value(), projectId);
+            
+            requestLogService.emitPusherEvent(ip, null, method, url, HttpStatus.OK.value(), channelId);
 
-            requestLogService.emitPusherEvent(ip, null, method, url,
-            HttpStatus.OK.value(),channelId);
-
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(ResponseMessages.NO_CONTENT_URL);
+            return ResponseEntity.status(HttpStatus.OK).body(ResponseMessages.NO_CONTENT_URL);
         }
 
-        String channelId = urlData.get().getProject().getChannelId();
-
-        Integer allowedRequests = urlData.get().getRequests();
-
-        Long timeWindow = urlData.get().getTime();
+        Url urlData = urlDataOpt.get();
+       
+        String channelId = urlData.getProject().getChannelId();
+        
+        Long projectId = urlData.getProject().getId();
+        
+        Integer allowedRequests = urlData.getRequests();
+        
+        Long timeWindow = urlData.getTime();
 
         if (urlService.isRateLimited(ip, url, allowedRequests, timeWindow)) {
             throw new RateLimitException(ResponseMessages.RATE_LIMIT_EXCEEDED);
         }
 
-        MockContent mockContentData = mockContentService.selectRandomJson(urlData.get().getMockContentList());
-
+        MockContent mockContentData = mockContentService.selectRandomJson(urlData.getMockContentList());
+        
         mockContentService.simulateLatency(mockContentData);
 
         ObjectMapper objectMapper = new ObjectMapper();
-
+        
         Object jsonObject;
-
+        
         String mockContentDataString = mockContentData.getData();
 
         try {
             jsonObject = objectMapper.readValue(mockContentDataString, Object.class);
-
         } catch (JsonProcessingException e) {
             return ResponseEntity.badRequest().body(ResponseMessages.JSON_PARSE_ERROR);
         }
 
-        requestLogService.saveRequestLogAsync(ip, urlData.get(), method, decodedUrl, HttpStatus.OK.value());
-
-        requestLogService.emitPusherEvent(ip, urlData.get(), method, decodedUrl, HttpStatus.OK.value(), channelId);
+        requestLogService.saveRequestLogAsync(ip, urlData, method, decodedUrl, HttpStatus.OK.value(), projectId);
+        
+        requestLogService.emitPusherEvent(ip, urlData, method, decodedUrl, HttpStatus.OK.value(), channelId);
 
         return ResponseEntity.ok(jsonObject);
     }
