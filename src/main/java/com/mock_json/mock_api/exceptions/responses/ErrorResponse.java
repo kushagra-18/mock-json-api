@@ -5,17 +5,17 @@ import java.time.LocalDateTime;
 public class ErrorResponse {
 
     private LocalDateTime timestamp;
-    private int status;
+    private int status_code;
     private String error;
     private String message;
     private String path;
     
     public ErrorResponse(
-            int status, String error, String message, String path, String appEnv) {
+        int status_code, String error, String message, String path, String appEnv) {
         this.timestamp = LocalDateTime.now();
-        this.status = status;
+        this.status_code = status_code;
         this.error = error;
-        if (status == 500 && "production".equalsIgnoreCase(appEnv)) {
+        if (status_code == 500 && "production".equalsIgnoreCase(appEnv)) {
             this.message = "Internal Server Error"; 
         } else {
             this.message = message; 
@@ -27,8 +27,8 @@ public class ErrorResponse {
         return timestamp;
     }
 
-    public int getStatus() {
-        return status;
+    public int getStatus_code() {
+        return status_code;
     }
 
     public String getError() {
