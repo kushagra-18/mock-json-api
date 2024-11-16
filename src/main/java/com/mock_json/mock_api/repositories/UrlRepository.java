@@ -17,8 +17,8 @@ public interface UrlRepository extends JpaRepository<Url, Long>, JpaSpecificatio
     @EntityGraph(attributePaths = {"project", "mockContentList"})
     Optional<Url> findByUrl(Specification<Url> spec);
 
-    @EntityGraph(attributePaths = {"project", "mockContentList"})
-    Optional<Url> findByUrl(String spec);
+    // @EntityGraph(attributePaths = {"project", "mockContentList"})
+    // Optional<Url> findByUrl(String spec);
 
     @EntityGraph(attributePaths = {"project", "mockContentList"})
     Optional<Url> findOne(Specification<Url> spec);

@@ -5,5 +5,5 @@ public class PusherChannels {
     private PusherChannels() {
     }
 
-    public static final String REQUEST_CHANNEL = "mock-url#";
+    public static final String REQUEST_CHANNEL = "mock-url_";
 }

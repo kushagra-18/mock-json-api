@@ -1,5 +1,6 @@
 package com.mock_json.mock_api.controllers;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
 
 @RestController
@@ -86,33 +88,35 @@ public class MockContentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/**")
-    @HeaderIntercepted
-    public ResponseEntity<?> getMockedJSON(HttpServletRequest request) {
+    @GetMapping("/api/v1/mock/{teamSlug}/{projectSlug}")
+    public ResponseEntity<?> getMockedJSON(
+            @RequestParam(required = true) String url,
+            @PathVariable String teamSlug,
+            @PathVariable String projectSlug,
+            HttpServletRequest request) {
 
-        String url = mockContentService.getUrl(request);
+        byte[] decodedBytes = Base64.getDecoder().decode(url);
+        
+        String decodedUrl = new String(decodedBytes);
 
         String method = request.getMethod();
 
         String ip = request.getRemoteAddr();
 
-        String teamSlug = HeaderContext.getTeamSlug();
-
-        String projectSlug = HeaderContext.getProjectSlug();
-
-        Optional<Url> urlData = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, url);
-
-        String channelId = urlData.get().getProject().getChannelId();
+        Optional<Url> urlData = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, decodedUrl);
 
         if (!urlData.isPresent()) {
 
-            requestLogService.saveRequestLogAsync(ip, null, method, url, HttpStatus.OK.value());
+            requestLogService.saveRequestLogAsync(ip, null, method, decodedUrl, HttpStatus.OK.value());
 
-            requestLogService.emitPusherEvent(ip, null, method, url, HttpStatus.OK.value(),channelId);
+            // requestLogService.emitPusherEvent(ip, null, method, url,
+            // HttpStatus.OK.value(),channelId);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(ResponseMessages.NO_CONTENT_URL);
         }
+
+        String channelId = urlData.get().getProject().getChannelId();
 
         Integer allowedRequests = urlData.get().getRequests();
 
@@ -139,9 +143,9 @@ public class MockContentController {
             return ResponseEntity.badRequest().body(ResponseMessages.JSON_PARSE_ERROR);
         }
 
-        requestLogService.saveRequestLogAsync(ip, urlData.get(), method, url, HttpStatus.OK.value());
+        requestLogService.saveRequestLogAsync(ip, urlData.get(), method, decodedUrl, HttpStatus.OK.value());
 
-        requestLogService.emitPusherEvent(ip, urlData.get(), method, url, HttpStatus.OK.value(),channelId);
+        requestLogService.emitPusherEvent(ip, urlData.get(), method, decodedUrl, HttpStatus.OK.value(), channelId);
 
         return ResponseEntity.ok(jsonObject);
     }

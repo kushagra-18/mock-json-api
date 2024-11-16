@@ -9,10 +9,10 @@
 		<relativePath/> 
 	</parent>
 	<groupId>com.mock_json</groupId>
-	<artifactId>demo</artifactId>
+	<artifactId>mock_json</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging> 
-	<name>Quiz</name>
+	<name>Mock Json</name>
 	<description>Mock JSON API</description>
 	<url/>
 	<licenses>
