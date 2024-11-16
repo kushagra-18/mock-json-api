@@ -8,13 +8,13 @@ const corsOptions = {
     origin: false, 
 };
 
-app.use(cors(corsOptions));
-
 
 const app = express();
 const port = 3001;
 
 app.use(express.json());
+
+app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
     if (req.url === '/favicon.ico') {
