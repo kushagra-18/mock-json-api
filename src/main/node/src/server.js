@@ -17,8 +17,8 @@ app.use((req, res, next) => {
 
 app.get('*', async (req, res) => {
     
-    const team = req.headers['X-header-team'];
-    const project = req.headers['X-header-project'];
+    const team = req.headers['x-header-team'];
+    const project = req.headers['x-header-project'];
 
     let currentURL = req.url;
 
