@@ -37,10 +37,6 @@ public class UrlService {
         return urlRepository.findOne(spec);
     }
 
-    public Optional<Url> findUrlDataByUrl(String url) {
-        return urlRepository.findByUrl(url);
-    }
-
     public Optional<Url> findUrlDataByUrlAndProjectSlug(String projectSlug, String url) {
         Specification<Url> spec = UrlSpecifications.hasProjectSlugAndUrl(projectSlug, url);
         return urlRepository.findOne(spec);
