@@ -35,11 +35,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
 
 @RestController
 @ResponseBody
+@RequestMapping("mock")
 @Validated
 public class MockContentController {
 
@@ -60,7 +62,7 @@ public class MockContentController {
     @Value("${BASE_URL}")
     private String baseUrl;
 
-    @PostMapping("/api/v1/mock/{projectSlug}")
+    @PostMapping("{projectSlug}")
     @Transactional
     public ResponseEntity<Map<String, Object>> saveMockContentData(
             @Valid @RequestBody MockContentUrlDto mockContentUrlDto, @PathVariable String projectSlug) {
@@ -86,7 +88,7 @@ public class MockContentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/api/v1/mock/{teamSlug}/{projectSlug}")
+    @GetMapping("{teamSlug}/{projectSlug}")
     public ResponseEntity<?> getMockedJSON(
             @RequestParam(required = true) String url,
             @PathVariable String teamSlug,
@@ -105,10 +107,14 @@ public class MockContentController {
 
         if (!urlData.isPresent()) {
 
+            String channelId = projectService.getChannelIdBySlugAndTeamSlug(teamSlug, projectSlug).getChannelId();
+
+            System.out.println(channelId);
+
             requestLogService.saveRequestLogAsync(ip, null, method, decodedUrl, HttpStatus.OK.value());
 
-            // requestLogService.emitPusherEvent(ip, null, method, url,
-            // HttpStatus.OK.value(),channelId);
+            requestLogService.emitPusherEvent(ip, null, method, url,
+            HttpStatus.OK.value(),channelId);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(ResponseMessages.NO_CONTENT_URL);

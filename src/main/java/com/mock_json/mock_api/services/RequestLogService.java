@@ -45,7 +45,7 @@ public class RequestLogService {
     @Async
     public void emitPusherEvent(String ip, Url url,String method, String urlString, int status,String channelId) {
        
-        if (ip == null || url == null  || channelId == null) {
+        if (ip == null  || channelId == null) {
             return;
         }
     

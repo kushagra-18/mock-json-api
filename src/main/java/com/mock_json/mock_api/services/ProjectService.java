@@ -15,6 +15,11 @@ public class ProjectService {
         this.projectRepository = projectRepository;
     }
 
+    public Project getChannelIdBySlugAndTeamSlug(String teamSlug, String projectSlug) {
+        return projectRepository.findByTeamSlugAndSlug(teamSlug, projectSlug)
+                .orElseThrow(() -> new NotFoundException("Project with slug " + projectSlug + " not found"));
+    }
+
     public Project findProjectById(Long projectId) {
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new NotFoundException("Project with ID " + projectId + " not found"));

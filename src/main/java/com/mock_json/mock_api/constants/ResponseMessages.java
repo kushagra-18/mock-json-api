@@ -17,11 +17,15 @@ public class ResponseMessages {
     // Validation Messages
     public static final String INVALID_INPUT = "The input provided is invalid.";
     public static final String UNAUTHORIZED_ACCESS = "You are not authorized to perform this action.";
-
+    public static final String RESTRICT_PROJECT_SLUG = "This is a restricted project, please use a different slug, If you are working in one of these projects, please reach out to us.";
 
     // 
     public static final String NO_CONTENT_URL = "Oopsie! 🐾 Looks like you stumbled upon an uncharted path. No mock API here yet—let’s create one and bring this URL to life";
     public static final String NO_PROJECT = "Oops! We couldn't find that project. Are you sure it exists? 🧐";
+
+
+
+
 
    
 }

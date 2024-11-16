@@ -12,6 +12,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     Optional<Project> findBySlug(String slug);
 
+    Optional<Project> findByTeamSlugAndSlug(String teamSlug, String projectSlug);
+
 
 }
     

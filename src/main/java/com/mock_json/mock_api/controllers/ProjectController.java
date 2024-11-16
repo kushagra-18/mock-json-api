@@ -11,15 +11,20 @@ import com.mock_json.mock_api.models.Project;
 import com.mock_json.mock_api.models.Team;
 import com.mock_json.mock_api.repositories.ProjectRepository;
 import com.mock_json.mock_api.repositories.TeamRepository;
+import com.mock_json.mock_api.exceptions.BadRequestException;
 import com.mock_json.mock_api.exceptions.NotFoundException;
+import com.mock_json.mock_api.constants.DisallowedProjectSlugs;
 import com.mock_json.mock_api.constants.PusherChannels;
 import com.mock_json.mock_api.constants.ResponseMessages;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/project")
+@RequestMapping("project")
 public class ProjectController {
 
     private static final Logger logger = LoggerFactory.getLogger(ProjectController.class);
@@ -31,6 +36,18 @@ public class ProjectController {
 
     @PostMapping("create-free")
     public ResponseEntity<?> createFreeProject(@Valid @RequestBody Project project) {
+
+        List<String> disallowedSlugs = Arrays.asList(DisallowedProjectSlugs.DISALLOWED_SLUGS);
+
+        if (disallowedSlugs.contains(project.getSlug().toLowerCase())) {
+            throw new BadRequestException(ResponseMessages.RESTRICT_PROJECT_SLUG);
+        }
+
+        Optional<Project> existingProject = projectRepository.findBySlug(project.getSlug());
+
+        if (existingProject.isPresent()) {
+            return ResponseEntity.ok(existingProject.get());
+        }
 
         Team team = teamRepository.findById(1L)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
@@ -49,7 +66,7 @@ public class ProjectController {
 
     @GetMapping("{projectSlug}")
     public ResponseEntity<?> getProjectBySlug(@PathVariable String projectSlug) {
-        
+
         if (projectSlug == null || projectSlug.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Project slug is required");
         }

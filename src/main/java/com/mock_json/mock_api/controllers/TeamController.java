@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @RestController
-@RequestMapping("/api/v1/team")
+@RequestMapping("team")
 @ResponseBody
 public class TeamController {
 
