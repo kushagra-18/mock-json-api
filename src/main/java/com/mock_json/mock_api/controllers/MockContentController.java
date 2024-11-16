@@ -26,6 +26,7 @@ import com.mock_json.mock_api.models.MockContent;
 import com.mock_json.mock_api.models.Url;
 import com.mock_json.mock_api.services.MockContentService;
 import com.mock_json.mock_api.services.ProjectService;
+import com.mock_json.mock_api.services.RedisService;
 import com.mock_json.mock_api.services.RequestLogService;
 import com.mock_json.mock_api.services.UrlService;
 
@@ -59,8 +60,25 @@ public class MockContentController {
     @Autowired
     private RequestLogService requestLogService;
 
+    @Autowired
+    private RedisService redisService;
+
     @Value("${BASE_URL}")
     private String baseUrl;
+
+    @Value("${GLOBAL_MAX_ALLOWED_REQUESTS}")
+    private Integer maxAllowedRequests;
+    
+    public Integer getMaxAllowedRequests() {
+        return maxAllowedRequests;
+    }
+
+    @Value("${GLOBAL_TIME_WINDOW}")
+    private Long timeWindow;
+
+    public Long getTimeWindow() {
+        return timeWindow;
+    }
 
     @PostMapping("{projectSlug}")
     @Transactional
@@ -99,6 +117,10 @@ public class MockContentController {
         
         String decodedUrl = new String(decodedBytes);
 
+        if(this.globalRateLimit(teamSlug,projectSlug)){
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ResponseMessages.GLOBAL_RATE_LIMIT_EXCEEDED);
+        }
+
         String method = request.getMethod();
 
         String ip = request.getRemoteAddr();
@@ -108,8 +130,6 @@ public class MockContentController {
         if (!urlData.isPresent()) {
 
             String channelId = projectService.getChannelIdBySlugAndTeamSlug(teamSlug, projectSlug).getChannelId();
-
-            System.out.println(channelId);
 
             requestLogService.saveRequestLogAsync(ip, null, method, decodedUrl, HttpStatus.OK.value());
 
@@ -152,5 +172,13 @@ public class MockContentController {
         requestLogService.emitPusherEvent(ip, urlData.get(), method, decodedUrl, HttpStatus.OK.value(), channelId);
 
         return ResponseEntity.ok(jsonObject);
+    }
+
+    private boolean globalRateLimit(String teamSlug, String projectSlug) {
+
+        String redisKey = redisService.createRedisKey("rate_limit_global", teamSlug, projectSlug);
+
+        return redisService.rateLimit(redisKey, this.getMaxAllowedRequests(), this.getTimeWindow());
+
     }
 }

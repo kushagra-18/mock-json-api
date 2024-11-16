@@ -61,4 +61,22 @@ public class RedisService {
 
         return result.toString().replaceAll(":", "_");
     }
+
+    public boolean rateLimit(String redisKey, Integer allowedRequests, Long timeWindow) {
+
+        if (allowedRequests != null && timeWindow != null) {
+
+            Long requestCount = this.incrementValue(redisKey, 1);
+
+            long count = (requestCount != null) ? requestCount : 0L; 
+
+            if (count == 1) {
+                this.expire(redisKey, Duration.ofSeconds(timeWindow));
+            }
+
+            return count > allowedRequests;
+        }
+
+        return false;
+    }
 }

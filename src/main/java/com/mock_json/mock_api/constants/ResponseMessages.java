@@ -13,6 +13,7 @@ public class ResponseMessages {
     public static final String NO_URL_PRESENT = "Hey, nothing in here!";
     public static final String RATE_LIMIT_EXCEEDED = "Rate limit exceeded, Please try again later.";
     public static final String JSON_PARSE_ERROR = "Error parsing JSON data";
+    public static final String GLOBAL_RATE_LIMIT_EXCEEDED = "You have exhaused the number of requests allowed for this endpoint. Please contact us if you need more.";
     
     // Validation Messages
     public static final String INVALID_INPUT = "The input provided is invalid.";

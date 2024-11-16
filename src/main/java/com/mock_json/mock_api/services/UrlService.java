@@ -80,24 +80,11 @@ public class UrlService {
      */
     public boolean isRateLimited(String ip, String url, Integer allowedRequests, Long timeWindow) {
 
-        if (allowedRequests != null && timeWindow != null) {
+        String sanitizedIp = ip.replaceAll(":", ".");
 
-            String sanitizedIp = ip.replaceAll(":", ".");
+        String redisKey = redisService.createRedisKey("rate_limit_custom", sanitizedIp, url);
 
-            String redisKey = redisService.createRedisKey("rate_limit_custom",sanitizedIp, url);
-
-            Long requestCount = redisService.incrementValue(redisKey, 1);
-
-            long count = (requestCount != null) ? requestCount : 0L; 
-
-            if (count == 1) {
-                redisService.expire(redisKey, Duration.ofSeconds(timeWindow));
-            }
-
-            return count > allowedRequests;
-        }
-
-        return false;
+        return redisService.rateLimit(redisKey, allowedRequests, timeWindow);
     }
 
 }
