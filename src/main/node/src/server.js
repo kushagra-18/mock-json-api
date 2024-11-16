@@ -33,7 +33,13 @@ app.get('*', async (req, res) => {
 
     currentURL = currentURL.replace(/^\//, '');
 
+    let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
     const base64EncodedURL = Buffer.from(currentURL).toString('base64');
+
+    if(ip){
+        ip = Buffer.from(ip).toString('base64');
+    }
 
     if (!team || !project) {
         return res.status(400).json({ message: 'Missing required headers' });
@@ -41,7 +47,7 @@ app.get('*', async (req, res) => {
 
     const siteURL = process.env.SITE_URL;
 
-    const targetUrl = `${siteURL}/api/v1/mock/${team}/${project}?url=${base64EncodedURL}`;
+    const targetUrl = `${siteURL}/api/v1/mock/${team}/${project}?url=${base64EncodedURL}&ip=${ip}`;
 
     if (!targetUrl) {
         return res.status(400).json({ message: 'No URL provided' });

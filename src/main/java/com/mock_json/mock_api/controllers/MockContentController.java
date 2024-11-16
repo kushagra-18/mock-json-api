@@ -143,6 +143,7 @@ public class MockContentController {
     @GetMapping("/{teamSlug}/{projectSlug}")
     public ResponseEntity<?> getMockedJSON(
             @RequestParam(required = true) String url,
+            @RequestParam(required = true) String ip,
             @PathVariable String teamSlug,
             @PathVariable String projectSlug,
             HttpServletRequest request) {
@@ -150,14 +151,15 @@ public class MockContentController {
         byte[] decodedBytes = Base64.getDecoder().decode(url);
         String decodedUrl = new String(decodedBytes);
 
+        byte[] decodedIp = Base64.getDecoder().decode(ip);
+        String decodedIpString = new String(decodedIp);
+
         if (this.globalRateLimit(teamSlug, projectSlug)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(ResponseMessages.GLOBAL_RATE_LIMIT_EXCEEDED);
         }
 
         String method = request.getMethod();
-
-        String ip = request.getRemoteAddr();
 
         Optional<Url> urlDataOpt = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, decodedUrl);
 
@@ -169,9 +171,9 @@ public class MockContentController {
 
             String channelId = project.getChannelId();
 
-            requestLogService.saveRequestLogAsync(ip, null, method, decodedUrl, HttpStatus.OK.value(), projectId);
+            requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), projectId);
 
-            requestLogService.emitPusherEvent(ip, null, method, url, HttpStatus.OK.value(), channelId);
+            requestLogService.emitPusherEvent(decodedIpString, null, method, url, HttpStatus.OK.value(), channelId);
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseMessages.NO_CONTENT_URL);
         }
@@ -186,7 +188,7 @@ public class MockContentController {
 
         Long timeWindow = urlData.getTime();
 
-        if (urlService.isRateLimited(ip, url, allowedRequests, timeWindow)) {
+        if (urlService.isRateLimited(decodedIpString, url, allowedRequests, timeWindow)) {
             throw new RateLimitException(ResponseMessages.RATE_LIMIT_EXCEEDED);
         }
 
@@ -206,9 +208,9 @@ public class MockContentController {
             return ResponseEntity.badRequest().body(ResponseMessages.JSON_PARSE_ERROR);
         }
 
-        requestLogService.saveRequestLogAsync(ip, urlData, method, decodedUrl, HttpStatus.OK.value(), projectId);
+        requestLogService.saveRequestLogAsync(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(), projectId);
 
-        requestLogService.emitPusherEvent(ip, urlData, method, decodedUrl, HttpStatus.OK.value(), channelId);
+        requestLogService.emitPusherEvent(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(), channelId);
 
         return ResponseEntity.ok(jsonObject);
     }
