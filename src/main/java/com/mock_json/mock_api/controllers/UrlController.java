@@ -26,6 +26,8 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @ResponseBody
@@ -48,7 +50,7 @@ public class UrlController {
         Url existingUrl = urlService.findById(urlId)
                 .orElseThrow(() -> new NotFoundException("URL not found with ID: " + urlId));
 
-        Url updatedUrl = urlService.save(existingUrl,urlDto);
+        Url updatedUrl = urlService.save(existingUrl, urlDto);
 
         updatedUrl.setMockContentList(null);
 
@@ -56,6 +58,21 @@ public class UrlController {
         response.put("status_code", HttpStatus.OK.value());
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("{urlId}")
+    public ResponseEntity<Map<String, Object>> getURLDetailsWithMockContent(@PathVariable Long urlId) {
+
+        Url url = urlService.findById(urlId)
+                .orElseThrow(() -> new NotFoundException("URL not found with ID: " + urlId));
+
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("url", url);
+        response.put("status_code", HttpStatus.OK.value());
+
+        return ResponseEntity.ok(response);
+
     }
 
 }
