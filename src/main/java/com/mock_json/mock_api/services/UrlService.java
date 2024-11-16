@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.mock_json.mock_api.dtos.UrlDataDto;
 import com.mock_json.mock_api.helpers.StringHelpers;
 import com.mock_json.mock_api.models.Project;
 import com.mock_json.mock_api.models.Url;
@@ -32,6 +33,11 @@ public class UrlService {
         this.urlRepository = urlRepository;
     }
 
+
+    public Optional<Url> findById(Long id) {
+        return urlRepository.findById(id);
+    }
+
     public Optional<Url> findUrlDataByUrlAndTeamAndProject(String teamSlug, String projectSlug, String url) {
         Specification<Url> spec = UrlSpecifications.hasTeamSlugAndProjectSlugAndUrl(teamSlug, projectSlug, url);
         return urlRepository.findOne(spec);
@@ -40,6 +46,24 @@ public class UrlService {
     public Optional<Url> findUrlDataByUrlAndProjectSlug(String projectSlug, String url) {
         Specification<Url> spec = UrlSpecifications.hasProjectSlugAndUrl(projectSlug, url);
         return urlRepository.findOne(spec);
+    }
+
+    public Url save(Url existingUrl, UrlDataDto urlDto) {
+
+        if (urlDto.getDescription() != null) {
+            existingUrl.setDescription(urlDto.getDescription());
+        }
+        if (urlDto.getName() != null) {
+            existingUrl.setName(urlDto.getName());
+        }
+        if (urlDto.getRequests() != null) {
+            existingUrl.setRequests(urlDto.getRequests());
+        }
+        if (urlDto.getTime() != null) {
+            existingUrl.setTime(urlDto.getTime());
+        }
+
+        return urlRepository.save(existingUrl);
     }
 
     /**

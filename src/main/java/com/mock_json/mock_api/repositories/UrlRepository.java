@@ -23,6 +23,10 @@ public interface UrlRepository extends JpaRepository<Url, Long>, JpaSpecificatio
     @EntityGraph(attributePaths = {"project", "mockContentList"})
     Optional<Url> findOne(Specification<Url> spec);
 
+    // @SuppressWarnings("null")
+    // @EntityGraph(attributePaths = {"id", "name", "description", "requests", "time","url"})
+    // Optional<Url> findById(Long id);
+
     
 
 }

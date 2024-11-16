@@ -12,6 +12,7 @@ import com.mock_json.mock_api.repositories.MockContentRepository;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -49,6 +50,35 @@ public class MockContentService {
         }
 
         return mockContentRepository.saveAll(mockContentList);
+    }
+
+    public List<MockContent> updateMockContentData(List<MockContent> mockContentList, Url url) {
+        LocalDateTime currTime = LocalDateTime.now();
+
+        List<MockContent> updatedMockContents = new ArrayList<>();
+
+        for (MockContent mockContent : mockContentList) {
+            MockContent existingContent = mockContentRepository
+                    .findById(mockContent.getId()) 
+                    .orElse(null);
+
+            if (existingContent != null) {
+                existingContent.setData(mockContent.getData());
+                existingContent.setDescription(mockContent.getDescription());
+                existingContent.setName(mockContent.getName());
+                existingContent.setLatency(mockContent.getLatency());
+                existingContent.setRandomness(mockContent.getRandomness());
+                existingContent.setUpdatedAt(currTime);
+                updatedMockContents.add(existingContent);
+            } else {
+                mockContent.setCreatedAt(currTime);
+                mockContent.setUpdatedAt(currTime);
+                mockContent.setUrlId(url);
+                updatedMockContents.add(mockContent);
+            }
+        }
+
+        return mockContentRepository.saveAll(updatedMockContents);
     }
 
     /**

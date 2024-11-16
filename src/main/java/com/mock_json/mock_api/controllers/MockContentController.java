@@ -12,8 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +23,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mock_json.mock_api.constants.ResponseMessages;
 import com.mock_json.mock_api.dtos.MockContentUrlDto;
+import com.mock_json.mock_api.dtos.UpdateMockContentUrlDto;
+import com.mock_json.mock_api.exceptions.BadRequestException;
 import com.mock_json.mock_api.exceptions.responses.RateLimitException;
 import com.mock_json.mock_api.models.MockContent;
 import com.mock_json.mock_api.models.Project;
@@ -96,7 +100,7 @@ public class MockContentController {
                                 projectService.findProjectBySlug(projectSlug)));
 
         List<MockContent> mockContentList = mockContentUrlDto.getMockContentList();
-        
+
         List<MockContent> savedMockedDataList = mockContentService.saveMockContentData(mockContentList, urlData);
 
         String mockedUrl = projectSlug + ".free." + baseUrl + "/" + urlString;
@@ -108,7 +112,35 @@ public class MockContentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("{teamSlug}/{projectSlug}")
+    @PatchMapping("{projectSlug}/{urlId}")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> updateMockContentData(
+            @PathVariable Long urlId,
+            @PathVariable String projectSlug,
+            @Valid @RequestBody UpdateMockContentUrlDto mockContentUrlDto) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        Url urlData = urlService.findById(urlId)
+                .orElseThrow(() -> new ResourceNotFoundException("URL with ID " + urlId + " not found"));
+
+        if (!urlData.getProject().getSlug().equals(projectSlug)) {
+            throw new BadRequestException("Project slug does not match the URL's associated project");
+        }
+
+        List<MockContent> updatedMockContentList = mockContentService.updateMockContentData(
+                mockContentUrlDto.getMockContentList(), urlData);
+
+        String mockedUrl = urlData.getProject().getSlug() + ".free." + baseUrl + "/" + urlData.getUrl();
+
+        response.put("url", mockedUrl);
+        response.put("data", updatedMockContentList);
+        response.put("status_code", HttpStatus.OK.value());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{teamSlug}/{projectSlug}")
     public ResponseEntity<?> getMockedJSON(
             @RequestParam(required = true) String url,
             @PathVariable String teamSlug,
@@ -134,24 +166,24 @@ public class MockContentController {
             Project project = projectService.getDataBySlugAndTeamSlug(teamSlug, projectSlug);
 
             Long projectId = project.getId();
-            
+
             String channelId = project.getChannelId();
 
             requestLogService.saveRequestLogAsync(ip, null, method, decodedUrl, HttpStatus.OK.value(), projectId);
-            
+
             requestLogService.emitPusherEvent(ip, null, method, url, HttpStatus.OK.value(), channelId);
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseMessages.NO_CONTENT_URL);
         }
 
         Url urlData = urlDataOpt.get();
-       
+
         String channelId = urlData.getProject().getChannelId();
-        
+
         Long projectId = urlData.getProject().getId();
-        
+
         Integer allowedRequests = urlData.getRequests();
-        
+
         Long timeWindow = urlData.getTime();
 
         if (urlService.isRateLimited(ip, url, allowedRequests, timeWindow)) {
@@ -159,13 +191,13 @@ public class MockContentController {
         }
 
         MockContent mockContentData = mockContentService.selectRandomJson(urlData.getMockContentList());
-        
+
         mockContentService.simulateLatency(mockContentData);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        
+
         Object jsonObject;
-        
+
         String mockContentDataString = mockContentData.getData();
 
         try {
@@ -175,7 +207,7 @@ public class MockContentController {
         }
 
         requestLogService.saveRequestLogAsync(ip, urlData, method, decodedUrl, HttpStatus.OK.value(), projectId);
-        
+
         requestLogService.emitPusherEvent(ip, urlData, method, decodedUrl, HttpStatus.OK.value(), channelId);
 
         return ResponseEntity.ok(jsonObject);

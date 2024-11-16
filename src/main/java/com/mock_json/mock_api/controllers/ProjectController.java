@@ -12,7 +12,6 @@ import com.mock_json.mock_api.models.Project;
 import com.mock_json.mock_api.models.RequestLog;
 import com.mock_json.mock_api.models.Team;
 import com.mock_json.mock_api.repositories.ProjectRepository;
-import com.mock_json.mock_api.repositories.RequestLogRepository;
 import com.mock_json.mock_api.repositories.TeamRepository;
 import com.mock_json.mock_api.services.RequestLogService;
 import com.mock_json.mock_api.exceptions.BadRequestException;
