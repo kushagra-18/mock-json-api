@@ -173,7 +173,7 @@ public class MockContentController {
 
             requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), projectId);
 
-            requestLogService.emitPusherEvent(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), channelId);
+            requestLogService.emitPusherEvent(decodedIpString, null, method, url, HttpStatus.OK.value(), channelId);
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseMessages.NO_CONTENT_URL);
         }
@@ -214,7 +214,7 @@ public class MockContentController {
 
         requestLogService.saveRequestLogAsync(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(), projectId);
 
-        requestLogService.emitPusherEvent(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(), channelId);
+        requestLogService.emitPusherEvent(decodedIpString, urlData, method, url, HttpStatus.OK.value(), channelId);
 
         return ResponseEntity.ok(createResponse(jsonObject, statusCode));
     }
