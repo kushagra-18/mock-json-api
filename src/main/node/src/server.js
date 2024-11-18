@@ -64,18 +64,24 @@ app.get('*', async (req, res) => {
         const { data } = response;
 
         const jsonData = data.json_data ?? null;
+
         const statusCode = data.status_code ?? null;
 
         if (!jsonData && !statusCode) {
-            throw new Error('Something went wrong');
+            return res.status(200).send(data);
         }
 
         return res.status(statusCode).json(jsonData);
     } catch (error) {
         const nativeStatusCode = error.response?.status ?? 500;
-
         const upstreamData = error.response?.data;
+        const contentType = error.response?.headers['content-type'];
 
+    
+        if (contentType && contentType.includes('text/html')) {
+            return res.status(nativeStatusCode).send(upstreamData || "An error occurred");
+        }
+    
         if (typeof upstreamData === "object") {
             return res.status(nativeStatusCode).json(upstreamData);
         }
