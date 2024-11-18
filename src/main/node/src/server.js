@@ -5,7 +5,7 @@ require('dotenv').config({ path: '../.env' });
 const cors = require('cors');
 
 const corsOptions = {
-    origin: false, 
+    origin: '*',
 };
 
 
@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 });
 
 app.get('*', async (req, res) => {
-    
+
     const team = req.headers['x-header-team'];
     const project = req.headers['x-header-project'];
 
@@ -37,7 +37,7 @@ app.get('*', async (req, res) => {
 
     const base64EncodedURL = Buffer.from(currentURL).toString('base64');
 
-    if(ip){
+    if (ip) {
         ip = Buffer.from(ip).toString('base64');
     }
 
@@ -55,16 +55,33 @@ app.get('*', async (req, res) => {
 
     try {
         console.log(`Team: ${team}, Project: ${project}`);
-      
+
         const response = await axios.get(targetUrl, {
             timeout: 10000,
             proxy: false,
         });
 
-        return res.status(response.status).json(response.data);
+        const { data } = response;
+
+        const jsonData = data.json_data ?? null;
+        const statusCode = data.status_code ?? null;
+
+        if (!jsonData && !statusCode) {
+            throw new Error('Something went wrong');
+        }
+
+        return res.status(statusCode).json(jsonData);
     } catch (error) {
-        return res.status(500).json({ message: 'Error forwarding the request', error: error.message });
+        const nativeStatusCode = error.response?.status ?? 500;
+
+        const upstreamData = error.response?.data;
+
+        if (typeof upstreamData === "object") {
+            return res.status(nativeStatusCode).json(upstreamData);
+        }
+        return res.status(nativeStatusCode).send(upstreamData || "An error occurred");
     }
+
 });
 
 app.listen(port, () => {

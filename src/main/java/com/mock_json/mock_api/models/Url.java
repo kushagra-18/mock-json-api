@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mock_json.mock_api.enums.StatusCode;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.NaturalId;
@@ -48,9 +49,9 @@ public class Url {
     @NaturalId
     private String url;
 
-    // @Column(nullable = false)
-    // @Enumerated(EnumType.STRING) 
-    // private StatusCode status; 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING) 
+    private StatusCode status; 
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

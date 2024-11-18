@@ -173,7 +173,7 @@ public class MockContentController {
 
             requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), projectId);
 
-            requestLogService.emitPusherEvent(decodedIpString, null, method, url, HttpStatus.OK.value(), channelId);
+            requestLogService.emitPusherEvent(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), channelId);
 
             return ResponseEntity.status(HttpStatus.OK).body(ResponseMessages.NO_CONTENT_URL);
         }
@@ -185,6 +185,10 @@ public class MockContentController {
         Long projectId = urlData.getProject().getId();
 
         Integer allowedRequests = urlData.getRequests();
+
+        Integer statusCode = urlData.getStatus().getCode();
+
+        System.out.println("statusCode: " + statusCode);
 
         Long timeWindow = urlData.getTime();
 
@@ -212,8 +216,16 @@ public class MockContentController {
 
         requestLogService.emitPusherEvent(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(), channelId);
 
-        return ResponseEntity.ok(jsonObject);
+        return ResponseEntity.ok(createResponse(jsonObject, statusCode));
     }
+
+    private Map<String, Object> createResponse(Object jsonObject, Integer statusCode) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("json_data", jsonObject);
+        response.put("status_code", statusCode);
+        return response;
+    }
+    
 
     private boolean globalRateLimit(String teamSlug, String projectSlug) {
 
