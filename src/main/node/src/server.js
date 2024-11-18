@@ -54,10 +54,10 @@ app.get('*', async (req, res) => {
     }
 
     try {
-        console.log(`Team: ${team}, Project: ${project}`);
+        console.log(`Target URL: ${targetUrl}`);
 
         const response = await axios.get(targetUrl, {
-            timeout: 10000,
+            timeout: 20000,
             proxy: false,
         });
 
