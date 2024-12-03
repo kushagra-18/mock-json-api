@@ -16,6 +16,7 @@ import com.mock_json.mock_api.repositories.TeamRepository;
 import com.mock_json.mock_api.services.RequestLogService;
 import com.mock_json.mock_api.exceptions.BadRequestException;
 import com.mock_json.mock_api.exceptions.NotFoundException;
+import com.mock_json.mock_api.helpers.StringHelpers;
 import com.mock_json.mock_api.constants.DisallowedProjectSlugs;
 import com.mock_json.mock_api.constants.PusherChannels;
 import com.mock_json.mock_api.constants.ResponseMessages;
@@ -33,6 +34,8 @@ public class ProjectController {
 
     private static final Logger logger = LoggerFactory.getLogger(ProjectController.class);
 
+    private static final Long DEFAULT_TEAM_ID = 1L;
+
     @Autowired
     private ProjectRepository projectRepository;
     @Autowired
@@ -41,34 +44,92 @@ public class ProjectController {
     @Autowired
     private RequestLogService requestLogService;
 
-    @PostMapping("create-free")
+    /**
+     * Create a free project. Validates slug and assigns it to a default team.
+     * @param project the project to create
+     * @return ResponseEntity with the created project or an existing project if
+     *         slug is duplicate
+     */
+
+    @PostMapping("/free")
     public ResponseEntity<?> createFreeProject(@Valid @RequestBody Project project) {
-
-        List<String> disallowedSlugs = Arrays.asList(DisallowedProjectSlugs.DISALLOWED_SLUGS);
-
-        if (disallowedSlugs.contains(project.getSlug().toLowerCase())) {
-            throw new BadRequestException(ResponseMessages.RESTRICT_PROJECT_SLUG);
-        }
+        
+        validateSlug(project.getSlug());
 
         Optional<Project> existingProject = projectRepository.findBySlug(project.getSlug());
-
+        
         if (existingProject.isPresent()) {
             return ResponseEntity.ok(existingProject.get());
         }
 
-        Team team = teamRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+        Project savedProject = saveProjectWithTeam(project, project.getSlug(),project.getName());
+       
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedProject);
+    }
+
+    /**
+     * Create a free project with a random slug and channel ID.
+     * @return ResponseEntity with the created project or an existing project if
+     *         slug is duplicate
+     */
+
+    @PostMapping("/free/fast-forward")
+    public ResponseEntity<?> createFreeFastForwardProject() {
+       
+        String randomSlug = StringHelpers.generateRandomString(10);
+
+        Optional<Project> existingProject = projectRepository.findBySlug(randomSlug);
+       
+        if (existingProject.isPresent()) {
+            return ResponseEntity.ok(existingProject.get());
+        }
+
+        Project project = new Project();
+
+        String projectName = StringHelpers.unslug(randomSlug);
+        
+        Project savedProject = saveProjectWithTeam(project, randomSlug,projectName);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedProject);
+    }
+
+
+    /**
+     * Validates the project slug, ensuring it is not in the disallowed list.
+     * @param slug the project slug to validate
+     */
+    private void validateSlug(String slug) {
+        if (slug == null || slug.isBlank()) {
+            throw new BadRequestException("Slug cannot be null or empty.");
+        }
+
+        List<String> disallowedSlugs = Arrays.asList(DisallowedProjectSlugs.DISALLOWED_SLUGS);
+        if (disallowedSlugs.contains(slug.toLowerCase())) {
+            throw new BadRequestException(ResponseMessages.RESTRICT_PROJECT_SLUG);
+        }
+    }
+
+    /**
+     * Saves the project with a given slug and associates it with the default team.
+     *
+     * @param project the project to save
+     * @param slug    the slug for the project
+     * @return the saved project
+     */
+    private Project saveProjectWithTeam(Project project, String slug,String name) {
+        Team team = teamRepository.findById(DEFAULT_TEAM_ID)
+                .orElseThrow(() -> new RuntimeException("Default team not found"));
 
         String channelId = UUID.randomUUID().toString();
 
-        project.setCreatedAt(LocalDateTime.now());
-        project.setUpdatedAt(LocalDateTime.now());
+        project.setSlug(slug);
         project.setChannelId(channelId);
         project.setTeam(team);
+        project.setName(name);
+        project.setCreatedAt(LocalDateTime.now());
+        project.setUpdatedAt(LocalDateTime.now());
 
-        Project savedProject = projectRepository.save(project);
-
-        return ResponseEntity.ok(savedProject);
+        return projectRepository.save(project);
     }
 
     @GetMapping("/{projectSlug}")

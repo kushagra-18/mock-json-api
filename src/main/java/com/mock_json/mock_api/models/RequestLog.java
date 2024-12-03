@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import jakarta.persistence.EntityListeners;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Document(collection = "request_logs") 
 @Getter
