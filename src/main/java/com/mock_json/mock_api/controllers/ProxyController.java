@@ -46,7 +46,6 @@ public class ProxyController {
     private ProxyService proxyService;
 
     @Autowired
-
     private ProjectService projectService;
 
     @PostMapping("forward")
@@ -69,5 +68,25 @@ public class ProxyController {
         ForwardProxy savedForwardProxy = proxyService.saveForwardProxy(forwardProxy, project);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(savedForwardProxy);
+    }
+
+    @PatchMapping("forward/active/{projectId}")
+    @Transactional
+    public ResponseEntity<?> updateForwardProxyActiveStatus(@PathVariable Long projectId) {
+
+        Project project = projectService.getDataById(projectId);
+
+        if (project == null) {
+            throw new NotFoundException("Project not found");
+        }
+
+        Boolean status = project.getIsForwardProxyActive();
+
+        Boolean newStatus = !status;
+
+        Project updatedProject = projectService.updateForwardFroxyActiveStatus(project, newStatus);
+
+        return ResponseEntity.ok(updatedProject);
+
     }
 }

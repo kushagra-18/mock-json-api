@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +27,7 @@ import com.mock_json.mock_api.dtos.MockContentUrlDto;
 import com.mock_json.mock_api.dtos.UpdateMockContentUrlDto;
 import com.mock_json.mock_api.exceptions.BadRequestException;
 import com.mock_json.mock_api.exceptions.responses.RateLimitException;
+import com.mock_json.mock_api.models.ForwardProxy;
 import com.mock_json.mock_api.models.MockContent;
 import com.mock_json.mock_api.models.Project;
 import com.mock_json.mock_api.models.Url;
@@ -44,6 +46,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @ResponseBody
@@ -140,6 +147,21 @@ public class MockContentController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Get mocked JSON data: This is the main endpoint that returns the mocked JSON
+     * data
+     * based on team and project slugs, it also checks for rate limits and logs the
+     * request.
+     * if proxy is enabled for the project, it will forward the request to the proxy
+     * server.
+     * 
+     * @param url
+     * @param ip
+     * @param teamSlug
+     * @param projectSlug
+     * @param request
+     * @return
+     */
     @GetMapping("/{teamSlug}/{projectSlug}")
     public ResponseEntity<?> getMockedJSON(
             @RequestParam(required = true) String url,
@@ -167,11 +189,28 @@ public class MockContentController {
         if (urlDataOpt.isEmpty()) {
             Project project = projectService.getDataBySlugAndTeamSlug(teamSlug, projectSlug);
 
+            Boolean isForwardProxyActive = project.getIsForwardProxyActive();
+
             Long projectId = project.getId();
 
             String channelId = project.getChannelId();
 
-            requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), projectId);
+            // if forwrard proxy is enabled, return the response from the proxy server
+            if (isForwardProxyActive) {
+                ForwardProxy forwardProxy = project.getForwardProxy();
+
+                ResponseEntity<?> forwardProxyResponse = forwardRequestToProxyServer(forwardProxy, decodedUrl);
+
+                requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl,
+                        forwardProxyResponse.getStatusCodeValue(), projectId);
+
+                requestLogService.emitPusherEvent(decodedIpString, null, method, url,
+                        forwardProxyResponse.getStatusCodeValue(), channelId);
+
+            }
+
+            requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(),
+                    projectId);
 
             requestLogService.emitPusherEvent(decodedIpString, null, method, url, HttpStatus.OK.value(), channelId);
 
@@ -187,8 +226,6 @@ public class MockContentController {
         Integer allowedRequests = urlData.getRequests();
 
         Integer statusCode = urlData.getStatus().getCode();
-
-        System.out.println("statusCode: " + statusCode);
 
         Long timeWindow = urlData.getTime();
 
@@ -212,11 +249,57 @@ public class MockContentController {
             return ResponseEntity.badRequest().body(ResponseMessages.JSON_PARSE_ERROR);
         }
 
-        requestLogService.saveRequestLogAsync(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(), projectId);
+        requestLogService.saveRequestLogAsync(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(),
+                projectId);
 
         requestLogService.emitPusherEvent(decodedIpString, urlData, method, url, HttpStatus.OK.value(), channelId);
 
         return ResponseEntity.ok(createResponse(jsonObject, statusCode));
+    }
+
+    /**
+     * Forward the request to the proxy server
+     * 
+     * @param forwardProxy
+     * @param decodedUrl
+     * @return
+     */
+    private ResponseEntity<?> forwardRequestToProxyServer(ForwardProxy forwardProxy, String decodedUrl) {
+        String domain = forwardProxy.getDomain();
+
+        if (!domain.endsWith("/")) {
+            domain += "/";
+        }
+
+        // Construct the full URL
+        String url = domain + decodedUrl;
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+
+            // Make the HTTP GET request
+            var response = restTemplate.getForEntity(url, String.class);
+            HttpHeaders headers = response.getHeaders();
+            @SuppressWarnings("null")
+            String contentType = headers.getContentType() != null ? headers.getContentType().toString() : "";
+
+            if (contentType.contains("application/json")) {
+                return ResponseEntity.status(response.getStatusCode())
+                        .headers(headers)
+                        .body(response.getBody());
+            } else if (contentType.contains("text/html")) {
+                return ResponseEntity.status(response.getStatusCode())
+                        .headers(headers)
+                        .body(response.getBody());
+            } else {
+                return ResponseEntity.status(response.getStatusCode())
+                        .headers(headers)
+                        .body(response.getBody());
+            }
+        } catch (Exception e) {
+            logger.error("Error while forwarding request to proxy server for url: " + url, e);
+            throw new BadRequestException("Error while forwarding request to proxy server");
+        }
     }
 
     private Map<String, Object> createResponse(Object jsonObject, Integer statusCode) {
@@ -225,7 +308,6 @@ public class MockContentController {
         response.put("status_code", statusCode);
         return response;
     }
-    
 
     private boolean globalRateLimit(String teamSlug, String projectSlug) {
 

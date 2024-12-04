@@ -55,4 +55,14 @@ public class Project {
     @JsonBackReference
     private Team team;
 
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "project_id")
+    @JsonBackReference
+    private ForwardProxy forwardProxy;
+
+    @Column(name = "is_forward_proxy_active", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @JsonProperty("is_forward_proxy_active")
+    @Builder.Default
+    private Boolean isForwardProxyActive = false;
 }

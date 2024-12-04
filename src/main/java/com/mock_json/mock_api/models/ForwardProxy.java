@@ -35,10 +35,6 @@ public class ForwardProxy {
     @Column(nullable = true)
     private String domain;
 
-    @Column()
-    @JsonProperty("is_active")
-    private Boolean isActive;
-
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     @JsonIgnore

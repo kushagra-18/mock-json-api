@@ -4,6 +4,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.mock_json.mock_api.models.Url;
 
+
 public class UrlSpecifications {
 
     public static Specification<Url> hasTeamSlug(String teamSlug) {
@@ -28,6 +29,7 @@ public class UrlSpecifications {
         return hasProjectSlug(projectSlug)
                 .and(hasUrl(url));
     }
+
 
     public static Specification<Url> hasTeamSlugAndProjectSlugAndUrl(String teamSlug, String projectSlug, String url) {
         return hasTeamSlug(teamSlug)

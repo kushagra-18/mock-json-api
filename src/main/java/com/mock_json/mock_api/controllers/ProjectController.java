@@ -51,9 +51,11 @@ public class ProjectController {
      *         slug is duplicate
      */
 
-    @PostMapping("/free")
+    @PostMapping("free")
     public ResponseEntity<?> createFreeProject(@Valid @RequestBody Project project) {
         
+        System.out.println("Creating a free project");
+
         validateSlug(project.getSlug());
 
         Optional<Project> existingProject = projectRepository.findBySlug(project.getSlug());
@@ -73,7 +75,7 @@ public class ProjectController {
      *         slug is duplicate
      */
 
-    @PostMapping("/free/fast-forward")
+    @PostMapping("free/fast-forward")
     public ResponseEntity<?> createFreeFastForwardProject() {
        
         String randomSlug = StringHelpers.generateRandomString(10);

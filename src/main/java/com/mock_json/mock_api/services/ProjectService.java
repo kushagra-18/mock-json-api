@@ -34,4 +34,11 @@ public class ProjectService {
         return projectRepository.findBySlug(projectSlug)
                 .orElseThrow(() -> new NotFoundException("Project with slug " + projectSlug + " not found"));
     }
+
+    public Project updateForwardFroxyActiveStatus(Project project, boolean status) {
+       
+        project.setIsForwardProxyActive(status);
+        
+        return projectRepository.save(project);
+    }
 }
