@@ -31,7 +31,7 @@ public class RequestLogService {
     }
 
     @Async
-    public void saveRequestLogAsync(String ip, Url url, String method, String urlString, int status, Long projectId) {
+    public void saveRequestLogAsync(String ip, Url url, String method, String urlString, int status, Long projectId,Boolean isProxied) {
 
         Long urlId = (url != null) ? url.getId() : -1L;
 
@@ -41,6 +41,7 @@ public class RequestLogService {
                 .url(urlString)
                 .method(method)
                 .status(status)
+                .isProxied(isProxied)
                 .projectId(projectId)
                 .build();
 
@@ -48,7 +49,7 @@ public class RequestLogService {
     }
 
     @Async
-    public void emitPusherEvent(String ip, Url url, String method, String urlString, int status, String channelId) {
+    public void emitPusherEvent(String ip, Url url, String method, String urlString, int status, String channelId,Boolean isProxied) {
 
         if (ip == null || channelId == null) {
             return;
@@ -58,7 +59,7 @@ public class RequestLogService {
                 .map(Url::getId)
                 .orElse(-1L);
 
-        PusherRequestEventDto eventData = new PusherRequestEventDto(method, urlString, urlId, ip, status);
+        PusherRequestEventDto eventData = new PusherRequestEventDto(method, urlString, urlId, ip, status, isProxied);
 
         String channelName = PusherChannels.REQUEST_CHANNEL + channelId;
 

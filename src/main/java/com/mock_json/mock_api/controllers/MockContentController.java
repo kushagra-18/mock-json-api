@@ -170,91 +170,106 @@ public class MockContentController {
             @PathVariable String projectSlug,
             HttpServletRequest request) {
 
-        byte[] decodedBytes = Base64.getDecoder().decode(url);
-        String decodedUrl = new String(decodedBytes);
+        // Decode URL and IP
+        String decodedUrl = decodeBase64(url);
+        String decodedIpString = decodeBase64(ip);
 
-        byte[] decodedIp = Base64.getDecoder().decode(ip);
-        String decodedIpString = new String(decodedIp);
-
+        // Rate limiting check
         if (this.globalRateLimit(teamSlug, projectSlug)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(ResponseMessages.GLOBAL_RATE_LIMIT_EXCEEDED);
         }
 
         String method = request.getMethod();
-
         Optional<Url> urlDataOpt = urlService.findUrlDataByUrlAndTeamAndProject(teamSlug, projectSlug, decodedUrl);
 
-        // If URL data is not found, handle the response directly
+        // If URL data is not found, handle directly
         if (urlDataOpt.isEmpty()) {
-            Project project = projectService.getDataBySlugAndTeamSlug(teamSlug, projectSlug);
-
-            Boolean isForwardProxyActive = project.getIsForwardProxyActive();
-
-            Long projectId = project.getId();
-
-            String channelId = project.getChannelId();
-
-            // if forwrard proxy is enabled, return the response from the proxy server
-            if (isForwardProxyActive) {
-                ForwardProxy forwardProxy = project.getForwardProxy();
-
-                ResponseEntity<?> forwardProxyResponse = forwardRequestToProxyServer(forwardProxy, decodedUrl);
-
-                requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl,
-                        forwardProxyResponse.getStatusCodeValue(), projectId);
-
-                requestLogService.emitPusherEvent(decodedIpString, null, method, url,
-                        forwardProxyResponse.getStatusCodeValue(), channelId);
-
-            }
-
-            requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(),
-                    projectId);
-
-            requestLogService.emitPusherEvent(decodedIpString, null, method, url, HttpStatus.OK.value(), channelId);
-
-            return ResponseEntity.status(HttpStatus.OK).body(ResponseMessages.NO_CONTENT_URL);
+            return handleUrlNotFound(teamSlug, projectSlug, decodedUrl, decodedIpString, method, request);
         }
 
-        Url urlData = urlDataOpt.get();
+        // Handle the case when URL data is found
+        return handleUrlDataFound(urlDataOpt.get(), decodedIpString, decodedUrl, method, request);
+    }
 
+    private String decodeBase64(String encodedString) {
+        byte[] decodedBytes = Base64.getDecoder().decode(encodedString);
+        return new String(decodedBytes);
+    }
+
+    private ResponseEntity<?> handleUrlNotFound(String teamSlug, String projectSlug, String decodedUrl,
+            String decodedIpString, String method, HttpServletRequest request) {
+
+        // Query the project and check for forward proxy
+        Project project = projectService.getDataBySlugAndTeamSlug(teamSlug, projectSlug);
+        if (project.getIsForwardProxyActive()) {
+            return handleForwardProxyRequest(decodedIpString, method, decodedUrl, project);
+        }
+
+        // Log the request and return default response
+        Long projectId = project.getId();
+        String channelId = project.getChannelId();
+        requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(),
+                projectId, false);
+        requestLogService.emitPusherEvent(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), channelId,
+                false);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ResponseMessages.NO_CONTENT_URL);
+    }
+
+    private ResponseEntity<?> handleForwardProxyRequest(String decodedIpString, String method, String decodedUrl,
+            Project project) {
+        ForwardProxy forwardProxy = project.getForwardProxy();
+        ResponseEntity<?> forwardProxyResponse = forwardRequestToProxyServer(forwardProxy, decodedUrl);
+
+        // Log the forward proxy request
+        Long projectId = project.getId();
+        String channelId = project.getChannelId();
+        requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl,
+                forwardProxyResponse.getStatusCodeValue(), projectId, true);
+        requestLogService.emitPusherEvent(decodedIpString, null, method, decodedUrl,
+                forwardProxyResponse.getStatusCodeValue(), channelId, true);
+
+        return forwardProxyResponse;
+    }
+
+    private ResponseEntity<?> handleUrlDataFound(Url urlData, String decodedIpString, String decodedUrl, String method,
+            HttpServletRequest request) {
+
+        // Check if rate limit is exceeded
         String channelId = urlData.getProject().getChannelId();
-
         Long projectId = urlData.getProject().getId();
-
         Integer allowedRequests = urlData.getRequests();
-
-        Integer statusCode = urlData.getStatus().getCode();
-
         Long timeWindow = urlData.getTime();
 
-        if (urlService.isRateLimited(decodedIpString, url, allowedRequests, timeWindow)) {
+        if (urlService.isRateLimited(decodedIpString, decodedUrl, allowedRequests, timeWindow)) {
             throw new RateLimitException(ResponseMessages.RATE_LIMIT_EXCEEDED);
         }
 
+        // Simulate mock response
         MockContent mockContentData = mockContentService.selectRandomJson(urlData.getMockContentList());
-
         mockContentService.simulateLatency(mockContentData);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        // Parse the mock content into JSON
+        Object jsonObject = parseJson(mockContentData.getData());
 
-        Object jsonObject;
+        // Log the request
+        requestLogService.saveRequestLogAsync(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(),
+                projectId, false);
+        requestLogService.emitPusherEvent(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(),
+                channelId,
+                false);
 
-        String mockContentDataString = mockContentData.getData();
+        return ResponseEntity.ok(createResponse(jsonObject, urlData.getStatus().getCode()));
+    }
 
+    private Object parseJson(String jsonContent) {
         try {
-            jsonObject = objectMapper.readValue(mockContentDataString, Object.class);
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(jsonContent, Object.class);
         } catch (JsonProcessingException e) {
             return ResponseEntity.badRequest().body(ResponseMessages.JSON_PARSE_ERROR);
         }
-
-        requestLogService.saveRequestLogAsync(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(),
-                projectId);
-
-        requestLogService.emitPusherEvent(decodedIpString, urlData, method, url, HttpStatus.OK.value(), channelId);
-
-        return ResponseEntity.ok(createResponse(jsonObject, statusCode));
     }
 
     /**

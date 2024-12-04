@@ -7,9 +7,12 @@ import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.time.LocalDateTime;
 
@@ -55,11 +58,10 @@ public class Project {
     @JsonBackReference
     private Team team;
 
-
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "project_id")
-    @JsonBackReference
-    private ForwardProxy forwardProxy;
+    @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonProperty("forward_proxy")
+    @JsonManagedReference
+    private ForwardProxy forwardProxy;    
 
     @Column(name = "is_forward_proxy_active", columnDefinition = "BOOLEAN DEFAULT FALSE")
     @JsonProperty("is_forward_proxy_active")

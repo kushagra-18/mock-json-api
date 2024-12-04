@@ -20,4 +20,7 @@ public class PusherRequestEventDto {
     private String ip;
     
     private int status;
+
+    @JsonProperty("is_proxied")
+    private Boolean isProxied;
 }

@@ -43,4 +43,7 @@ public class RequestLog{
 
     @Field("url") 
     private String url;
+
+    @Field("is_proxied")
+    private boolean isProxied;
 }

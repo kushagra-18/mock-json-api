@@ -27,10 +27,10 @@ public class ForwardProxy {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @JsonBackReference
     @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
+    private Project project;    
 
     @Column(nullable = true)
     private String domain;
@@ -48,7 +48,6 @@ public class ForwardProxy {
     @Transient
     @JsonProperty("project_id")
     private Long projectId;
-    
     
     public Long getProjectId() {
         return projectId;
