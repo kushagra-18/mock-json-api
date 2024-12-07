@@ -1,5 +1,6 @@
 package com.mock_json.mock_api.helpers;
 
+import java.util.Base64;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class StringHelpers {
@@ -62,5 +63,10 @@ public class StringHelpers {
 
         // Trim the trailing space and return
         return readable.toString().trim();
+    }
+
+     public static String decodeBase64(String encodedString) {
+        byte[] decodedBytes = Base64.getDecoder().decode(encodedString);
+        return new String(decodedBytes);
     }
 }

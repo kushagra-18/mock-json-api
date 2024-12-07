@@ -128,6 +128,7 @@ public class ProjectController {
         project.setChannelId(channelId);
         project.setTeam(team);
         project.setName(name);
+        project.setIsForwardProxyActive(false);
         project.setCreatedAt(LocalDateTime.now());
         project.setUpdatedAt(LocalDateTime.now());
 

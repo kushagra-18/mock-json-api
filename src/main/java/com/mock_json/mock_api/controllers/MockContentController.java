@@ -48,9 +48,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
+import com.mock_json.mock_api.helpers.StringHelpers;
 
 @RestController
 @ResponseBody
@@ -171,8 +169,8 @@ public class MockContentController {
             HttpServletRequest request) {
 
         // Decode URL and IP
-        String decodedUrl = decodeBase64(url);
-        String decodedIpString = decodeBase64(ip);
+        String decodedUrl = StringHelpers.decodeBase64(url);
+        String decodedIpString = StringHelpers.decodeBase64(ip);
 
         // Rate limiting check
         if (this.globalRateLimit(teamSlug, projectSlug)) {
@@ -190,11 +188,6 @@ public class MockContentController {
 
         // Handle the case when URL data is found
         return handleUrlDataFound(urlDataOpt.get(), decodedIpString, decodedUrl, method, request);
-    }
-
-    private String decodeBase64(String encodedString) {
-        byte[] decodedBytes = Base64.getDecoder().decode(encodedString);
-        return new String(decodedBytes);
     }
 
     private ResponseEntity<?> handleUrlNotFound(String teamSlug, String projectSlug, String decodedUrl,
