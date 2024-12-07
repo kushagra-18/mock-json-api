@@ -1,7 +1,6 @@
 package com.mock_json.mock_api.repositories;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

@@ -13,6 +13,7 @@ import com.mock_json.mock_api.models.RequestLog;
 import com.mock_json.mock_api.models.Team;
 import com.mock_json.mock_api.repositories.ProjectRepository;
 import com.mock_json.mock_api.repositories.TeamRepository;
+import com.mock_json.mock_api.services.RandomWordsService;
 import com.mock_json.mock_api.services.RequestLogService;
 import com.mock_json.mock_api.exceptions.BadRequestException;
 import com.mock_json.mock_api.exceptions.NotFoundException;
@@ -43,6 +44,9 @@ public class ProjectController {
 
     @Autowired
     private RequestLogService requestLogService;
+
+    @Autowired
+    private RandomWordsService randomWordsService;
 
     /**
      * Create a free project. Validates slug and assigns it to a default team.
@@ -78,7 +82,7 @@ public class ProjectController {
     @PostMapping("free/fast-forward")
     public ResponseEntity<?> createFreeFastForwardProject() {
        
-        String randomSlug = StringHelpers.generateRandomString(10);
+        String randomSlug = randomWordsService.getRandomSlug();
 
         Optional<Project> existingProject = projectRepository.findBySlug(randomSlug);
        
