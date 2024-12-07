@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -195,15 +197,18 @@ public class MockContentController {
 
         // Query the project and check for forward proxy
         Project project = projectService.getDataBySlugAndTeamSlug(teamSlug, projectSlug);
+
         if (project.getIsForwardProxyActive()) {
             return handleForwardProxyRequest(decodedIpString, method, decodedUrl, project);
         }
 
         // Log the request and return default response
         Long projectId = project.getId();
+
         String channelId = project.getChannelId();
         requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(),
                 projectId, false);
+
         requestLogService.emitPusherEvent(decodedIpString, null, method, decodedUrl, HttpStatus.OK.value(), channelId,
                 false);
 
@@ -213,13 +218,17 @@ public class MockContentController {
     private ResponseEntity<?> handleForwardProxyRequest(String decodedIpString, String method, String decodedUrl,
             Project project) {
         ForwardProxy forwardProxy = project.getForwardProxy();
+
         ResponseEntity<?> forwardProxyResponse = forwardRequestToProxyServer(forwardProxy, decodedUrl);
 
         // Log the forward proxy request
         Long projectId = project.getId();
+
         String channelId = project.getChannelId();
+
         requestLogService.saveRequestLogAsync(decodedIpString, null, method, decodedUrl,
                 forwardProxyResponse.getStatusCodeValue(), projectId, true);
+
         requestLogService.emitPusherEvent(decodedIpString, null, method, decodedUrl,
                 forwardProxyResponse.getStatusCodeValue(), channelId, true);
 
@@ -287,7 +296,9 @@ public class MockContentController {
 
             // Make the HTTP GET request
             var response = restTemplate.getForEntity(url, String.class);
+
             HttpHeaders headers = response.getHeaders();
+
             @SuppressWarnings("null")
             String contentType = headers.getContentType() != null ? headers.getContentType().toString() : "";
 
@@ -304,9 +315,13 @@ public class MockContentController {
                         .headers(headers)
                         .body(response.getBody());
             }
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .headers(e.getResponseHeaders())
+                    .body(e.getResponseBodyAsString());
         } catch (Exception e) {
-            logger.error("Error while forwarding request to proxy server for url: " + url, e);
-            throw new BadRequestException("Error while forwarding request to proxy server");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Request failed: ");
         }
     }
 
