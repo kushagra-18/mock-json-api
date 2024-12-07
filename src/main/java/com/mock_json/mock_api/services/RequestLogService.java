@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +27,7 @@ public class RequestLogService {
     }
 
     public List<RequestLog> getLogsByProjectId(Long projectId, Integer limit, Integer offset) {
-        Pageable pageable = PageRequest.of(offset, limit);
+        Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Order.desc("createdAt")));
         return requestLogRepository.findByProjectId(projectId, pageable);
     }
 
