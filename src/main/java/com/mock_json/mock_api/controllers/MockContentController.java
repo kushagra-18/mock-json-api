@@ -39,7 +39,12 @@ import com.mock_json.mock_api.services.RedisService;
 import com.mock_json.mock_api.services.RequestLogService;
 import com.mock_json.mock_api.services.UrlService;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -81,8 +86,15 @@ public class MockContentController {
     @Value("${GLOBAL_MAX_ALLOWED_REQUESTS}")
     private Integer maxAllowedRequests;
 
+    @Value("${SECRET_KEY}")
+    private String secretKey;
+
     public Integer getMaxAllowedRequests() {
         return maxAllowedRequests;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
     }
 
     @Value("${GLOBAL_TIME_WINDOW}")
@@ -166,9 +178,12 @@ public class MockContentController {
     public ResponseEntity<?> getMockedJSON(
             @RequestParam(required = true) String url,
             @RequestParam(required = true) String ip,
+            @RequestParam(required = true) String token,
             @PathVariable String teamSlug,
             @PathVariable String projectSlug,
             HttpServletRequest request) {
+
+        boolean isTokenValid = validateToken(token);
 
         // Decode URL and IP
         String decodedUrl = StringHelpers.decodeBase64(url);
@@ -338,5 +353,19 @@ public class MockContentController {
 
         return redisService.rateLimit(redisKey, this.getMaxAllowedRequests(), this.getTimeWindow());
 
+    }
+
+    private boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(this.getSecretKey().getBytes())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (JwtException e) {
+            throw new RuntimeException("Invalid or expired token: " + e.getMessage());
+        }
+
+        return true;
     }
 }

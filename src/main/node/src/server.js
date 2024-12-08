@@ -1,5 +1,7 @@
 const express = require('express');
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
+
 require('dotenv').config({ path: '../.env' });
 
 const cors = require('cors');
@@ -29,6 +31,10 @@ app.get('*', async (req, res) => {
     const team = req.headers['x-header-team'];
     const project = req.headers['x-header-project'];
 
+    const jwtOptions = {
+        expiresIn: '20s'
+      };
+
     let currentURL = req.url;
 
     currentURL = currentURL.replace(/^\//, '');
@@ -45,9 +51,13 @@ app.get('*', async (req, res) => {
         return res.status(400).json({ message: 'Missing required headers' });
     }
 
-    const siteURL = process.env.SITE_URL;
+    const siteURL = process.env.SITE_URL; 
 
-    const targetUrl = `${siteURL}/api/v1/mock/${team}/${project}?url=${base64EncodedURL}&ip=${ip}`;
+    const secretKey = process.env.SECRET_KEY;
+
+    const token = jwt.sign({}, secretKey, jwtOptions);
+
+    const targetUrl = `${siteURL}/api/v1/mock/${team}/${project}?url=${base64EncodedURL}&ip=${ip}&token=${token}`;
 
     if (!targetUrl) {
         return res.status(400).json({ message: 'No URL provided' });
