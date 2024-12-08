@@ -363,7 +363,8 @@ public class MockContentController {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (JwtException e) {
-            throw new RuntimeException("Invalid or expired token: " + e.getMessage());
+            this.logger.error("Invalid or expired token: " + e.getMessage());
+            throw new RuntimeException("Invalid or expired token");
         }
 
         return true;
