@@ -1,6 +1,8 @@
 const express = require('express');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+const { URL } = require('url');
+const runFakerCode = require('./faker');
 
 require('dotenv').config({ path: '../.env' });
 
@@ -12,6 +14,7 @@ const corsOptions = {
 
 
 const app = express();
+
 const port = process.env.PORT || 3001;
 
 app.use(express.json());
@@ -29,6 +32,7 @@ app.use((req, res, next) => {
 app.get('*', async (req, res) => {
 
     const team = req.headers['x-header-team'];
+    
     const project = req.headers['x-header-project'];
 
     const jwtOptions = {
@@ -57,7 +61,11 @@ app.get('*', async (req, res) => {
 
     const token = jwt.sign({}, secretKey, jwtOptions);
 
-    const targetUrl = `${siteURL}/api/v1/mock/${team}/${project}?url=${base64EncodedURL}&ip=${ip}&token=${token}`;
+    const targetUrl = new URL(`/api/v1/mock/${team}/${project}`, siteURL);
+    
+    targetUrl.searchParams.append('url', base64EncodedURL);
+    targetUrl.searchParams.append('ip', ip);
+    targetUrl.searchParams.append('token', token);
 
     if (!targetUrl) {
         return res.status(400).json({ message: 'No URL provided' });
@@ -73,16 +81,27 @@ app.get('*', async (req, res) => {
 
         const { data } = response;
 
-        const jsonData = data.json_data ?? null;
+        const content = data.content ?? null;
 
         const statusCode = data.status_code ?? null;
 
-        if (!jsonData && !statusCode) {
-            return res.status(200).send(data);
+        const mockType = data.mock_type ?? null;
+
+        if (!content && !statusCode) {
+            return res.status(500).send('Invalid response from upstream server');
         }
 
-        return res.status(statusCode).json(jsonData);
+        if(mockType === 'FAKER') {
+            const result = await runFakerCode(content);
+            console.log(`Faker Result: ${result}`);
+            return res.status(statusCode).json(result);
+        }
+
+        return res.status(statusCode).json(content);
     } catch (error) {
+
+        console.error(error);
+
         const nativeStatusCode = error.response?.status ?? 500;
         const upstreamData = error.response?.data;
         const contentType = error.response?.headers['content-type'];

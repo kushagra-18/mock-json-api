@@ -2,6 +2,7 @@ package com.mock_json.mock_api.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.mock_json.mock_api.helpers.StringHelpers;
@@ -36,7 +37,9 @@ public class MockContentService {
      * @param project
      * @return
      */
-    public List<MockContent> saveMockContentData(List<MockContent> mockContentList, Url url) {
+
+    @Async
+    public void saveMockContentData(List<MockContent> mockContentList, Url url) {
         LocalDateTime currTime = LocalDateTime.now();
 
         for (MockContent mockContent : mockContentList) {
@@ -49,10 +52,11 @@ public class MockContentService {
             }
         }
 
-        return mockContentRepository.saveAll(mockContentList);
+        mockContentRepository.saveAll(mockContentList);
     }
 
-    public List<MockContent> updateMockContentData(List<MockContent> mockContentList, Url url) {
+    @Async
+    public void updateMockContentData(List<MockContent> mockContentList, Url url) {
         LocalDateTime currTime = LocalDateTime.now();
 
         List<MockContent> updatedMockContents = new ArrayList<>();
@@ -78,7 +82,7 @@ public class MockContentService {
             }
         }
 
-        return mockContentRepository.saveAll(updatedMockContents);
+        mockContentRepository.saveAll(updatedMockContents);
     }
 
     /**

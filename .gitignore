@@ -36,3 +36,4 @@ build/
 *.gz
 
 env.properties
+*node_modules/

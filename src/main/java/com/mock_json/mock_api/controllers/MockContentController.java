@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mock_json.mock_api.constants.ResponseMessages;
 import com.mock_json.mock_api.dtos.MockContentUrlDto;
 import com.mock_json.mock_api.dtos.UpdateMockContentUrlDto;
+import com.mock_json.mock_api.enums.MockType;
 import com.mock_json.mock_api.exceptions.BadRequestException;
 import com.mock_json.mock_api.exceptions.responses.RateLimitException;
 import com.mock_json.mock_api.models.ForwardProxy;
@@ -120,12 +121,11 @@ public class MockContentController {
 
         List<MockContent> mockContentList = mockContentUrlDto.getMockContentList();
 
-        List<MockContent> savedMockedDataList = mockContentService.saveMockContentData(mockContentList, urlData);
+        mockContentService.saveMockContentData(mockContentList, urlData);
 
         String mockedUrl = projectSlug + ".free." + baseUrl + "/" + urlString;
 
         response.put("url", mockedUrl);
-        response.put("data", savedMockedDataList);
         response.put("status_code", HttpStatus.CREATED.value());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -147,13 +147,12 @@ public class MockContentController {
             throw new BadRequestException("Project slug does not match the URL's associated project");
         }
 
-        List<MockContent> updatedMockContentList = mockContentService.updateMockContentData(
+        mockContentService.updateMockContentData(
                 mockContentUrlDto.getMockContentList(), urlData);
 
         String mockedUrl = urlData.getProject().getSlug() + ".free." + baseUrl + "/" + urlData.getUrl();
 
         response.put("url", mockedUrl);
-        response.put("data", updatedMockContentList);
         response.put("status_code", HttpStatus.OK.value());
 
         return ResponseEntity.ok(response);
@@ -183,7 +182,7 @@ public class MockContentController {
             @PathVariable String projectSlug,
             HttpServletRequest request) {
 
-        boolean isTokenValid = validateToken(token);
+        // validateToken(token);
 
         // Decode URL and IP
         String decodedUrl = StringHelpers.decodeBase64(url);
@@ -267,8 +266,16 @@ public class MockContentController {
         MockContent mockContentData = mockContentService.selectRandomJson(urlData.getMockContentList());
         mockContentService.simulateLatency(mockContentData);
 
+        MockType mockType = mockContentData.getMockType();
         // Parse the mock content into JSON
-        Object jsonObject = parseJson(mockContentData.getData());
+
+        Object jsonObject;
+
+        if(mockType == MockType.JSON){
+             jsonObject = parseJson(mockContentData.getData());
+        }else{
+             jsonObject = mockContentData.getData();
+        }
 
         // Log the request
         requestLogService.saveRequestLogAsync(decodedIpString, urlData, method, decodedUrl, HttpStatus.OK.value(),
@@ -277,7 +284,7 @@ public class MockContentController {
                 channelId,
                 false);
 
-        return ResponseEntity.ok(createResponse(jsonObject, urlData.getStatus().getCode()));
+        return ResponseEntity.ok(createResponse(jsonObject, urlData.getStatus().getCode(), mockType));
     }
 
     private Object parseJson(String jsonContent) {
@@ -340,9 +347,10 @@ public class MockContentController {
         }
     }
 
-    private Map<String, Object> createResponse(Object jsonObject, Integer statusCode) {
+    private Map<String, Object> createResponse(Object jsonObject, Integer statusCode,MockType mockType) {
         Map<String, Object> response = new HashMap<>();
-        response.put("json_data", jsonObject);
+        response.put("content", jsonObject);
+        response.put("mock_type",mockType);
         response.put("status_code", statusCode);
         return response;
     }

@@ -9,7 +9,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mock_json.mock_api.enums.MockType;
+import com.mock_json.mock_api.enums.StatusCode;
 
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -46,6 +49,13 @@ public class MockContent {
 
     @Column(nullable = false)
     private String name;
+
+    @Builder.Default
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING) 
+    @JsonProperty("mock_type")
+    @ColumnDefault("'JSON'") 
+    private MockType mockType = MockType.JSON; 
 
     @Lob
     @JsonProperty("data")
