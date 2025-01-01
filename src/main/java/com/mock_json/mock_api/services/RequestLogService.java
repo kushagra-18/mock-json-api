@@ -14,21 +14,40 @@ import com.mock_json.mock_api.dtos.PusherRequestEventDto;
 import com.mock_json.mock_api.models.RequestLog;
 import com.mock_json.mock_api.models.Url;
 import com.mock_json.mock_api.repositories.RequestLogRepository;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Service
 public class RequestLogService {
 
     private final RequestLogRepository requestLogRepository;
     private final PusherService pusherService;
+    private final MongoTemplate mongoTemplate;
 
-    public RequestLogService(RequestLogRepository requestLogRepository, PusherService pusherService) {
+    public RequestLogService(RequestLogRepository requestLogRepository, PusherService pusherService,MongoTemplate mongoTemplate) {
         this.requestLogRepository = requestLogRepository;
         this.pusherService = pusherService;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public List<RequestLog> getLogsByProjectId(Long projectId, Integer limit, Integer offset) {
         Pageable pageable = PageRequest.of(offset, limit, Sort.by(Sort.Order.desc("createdAt")));
         return requestLogRepository.findByProjectId(projectId, pageable);
+    }
+
+    @Async
+    public void updateManyByUrlIdAndUrl(String url, String updatedField, Object newValue) {
+        Query query = new Query();
+      
+        query.addCriteria(Criteria.where("url_id").is(-1L).and("url").is(url));
+
+        Update update = new Update();
+
+        update.set(updatedField, newValue);
+
+        mongoTemplate.updateMulti(query, update, RequestLog.class);
     }
 
     @Async

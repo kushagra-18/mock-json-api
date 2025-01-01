@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { URL } = require('url');
-const runFakerCode = require('./faker');
+const {executeCode} = require('./faker');
 
 require('dotenv').config({ path: '../.env' });
 
@@ -87,13 +87,12 @@ app.get('*', async (req, res) => {
 
         const mockType = data.mock_type ?? null;
 
-        if (!content && !statusCode) {
-            return res.status(500).send('Invalid response from upstream server');
+        if (!content || !statusCode) {
+            return res.status(200).send(data);
         }
 
         if(mockType === 'FAKER') {
-            const result = await runFakerCode(content);
-            console.log(`Faker Result: ${result}`);
+            const result = await executeCode(content);
             return res.status(statusCode).json(result);
         }
 

@@ -121,7 +121,8 @@ public class MockContentController {
 
         List<MockContent> mockContentList = mockContentUrlDto.getMockContentList();
 
-        mockContentService.saveMockContentData(mockContentList, urlData);
+
+        mockContentService.saveMockContentData(mockContentList, urlData,urlString);
 
         String mockedUrl = projectSlug + ".free." + baseUrl + "/" + urlString;
 

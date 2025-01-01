@@ -58,8 +58,6 @@ public class ProjectController {
     @PostMapping("free")
     public ResponseEntity<?> createFreeProject(@Valid @RequestBody Project project) {
         
-        System.out.println("Creating a free project");
-
         validateSlug(project.getSlug());
 
         Optional<Project> existingProject = projectRepository.findBySlug(project.getSlug());

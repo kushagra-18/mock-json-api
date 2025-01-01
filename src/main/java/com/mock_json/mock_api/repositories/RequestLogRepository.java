@@ -13,4 +13,6 @@ public interface RequestLogRepository extends MongoRepository<RequestLog, String
 
     List<RequestLog> findByProjectId(Long projectId, Pageable pageable);
 
+    // void updateRequestByUrlIdAndUrl(Long urlId, String url);
+
 }

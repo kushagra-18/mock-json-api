@@ -1,5 +1,6 @@
 package com.mock_json.mock_api.services;
 
+import org.apache.catalina.connector.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -23,11 +24,14 @@ import java.util.concurrent.TimeUnit;
 public class MockContentService {
 
     private final MockContentRepository mockContentRepository;
+    private final RequestLogService requestLogService;
 
     private static final Logger logger = LoggerFactory.getLogger(MockContentService.class);
 
-    public MockContentService(MockContentRepository mockContentRepository) {
+    public MockContentService(MockContentRepository mockContentRepository, RequestLogService requestLogService) {
         this.mockContentRepository = mockContentRepository;
+        this.requestLogService = requestLogService;
+
     }
 
     /**
@@ -39,7 +43,7 @@ public class MockContentService {
      */
 
     @Async
-    public void saveMockContentData(List<MockContent> mockContentList, Url url) {
+    public void saveMockContentData(List<MockContent> mockContentList, Url url,String urlString) {
         LocalDateTime currTime = LocalDateTime.now();
 
         for (MockContent mockContent : mockContentList) {
@@ -52,7 +56,11 @@ public class MockContentService {
             }
         }
 
-        mockContentRepository.saveAll(mockContentList);
+        List<MockContent> mockContent = mockContentRepository.saveAll(mockContentList);
+
+        Long urlId = mockContent.get(0).getUrlId().getId();
+
+        requestLogService.updateManyByUrlIdAndUrl(urlString, "url_id", urlId);
     }
 
     @Async
