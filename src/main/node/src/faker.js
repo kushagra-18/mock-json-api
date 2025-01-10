@@ -32,18 +32,14 @@ class CodeSandbox {
                 }
                 throw new Error(`Module '${moduleName}' is not allowed`);
             },
-            Handlebars: Handlebars
+            Handlebars: Handlebars,
+            resultValue: null
         });
-
-          const template11 = Handlebars.compile(templateStr);
-
-          console.log('test',template11);
 
         try {
             const code = `
                 const { faker } = require('@faker-js/faker');
                 
-                // Register custom Handlebars helpers
                 Handlebars.registerHelper('faker', function(property) {
                     const props = property.split('.');
                     let current = faker;
@@ -56,53 +52,53 @@ class CodeSandbox {
                     return '';
                 });
 
-                // Register range helper for loops
-                Handlebars.registerHelper('range', function(n, options) {
-                    const results = [];
-                    for (let i = 0; i < n; i++) {
-                        results.push(options.fn({ index: i }));
-                    }
-                    return results.join('');
-                });
-
-                // Register random range helper
                 Handlebars.registerHelper('randomRange', function(min, max) {
                     return faker.number.int({ min, max });
                 });
 
-                // Register array helper
+                // Improved array helper with better handling of index and separators
                 Handlebars.registerHelper('array', function(n, options) {
                     return Array.from({ length: n }, (_, index) => 
-                        options.fn({ index })
-                    );
+                        options.fn({
+                            index,
+                            '@index': index,
+                            '@first': index === 0,
+                            '@last': index === n - 1
+                        })
+                    ).join('');
                 });
 
-                // Compile template
-                const template = Handlebars.compile(\`${templateStr}\`);
-                
+                const template = Handlebars.compile(\`${fixedTemplate}\`);
+                resultValue = template();
             `;
 
             const script = new vm.Script(code);
-            
-            const result = await Promise.race([
+
+            await Promise.race([
                 new Promise((resolve) => {
-                    resolve(script.runInContext(context, {
+                    script.runInContext(context, {
                         timeout: this.timeout,
                         displayErrors: true,
                         breakOnSigint: true
-                    }));
+                    });
+                    resolve();
                 }),
-                new Promise((_, reject) => 
+                new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Execution timed out')), this.timeout)
                 )
             ]);
 
+            // Parse and reformat the JSON for proper formatting
+            const parsed = JSON.parse(context.resultValue);
+            const formatted = JSON.stringify(parsed, null, 2);
+
             return {
-                result,
+                result: formatted,
                 logs: this.logs,
                 errors: this.errors,
                 success: true
             };
+
         } catch (error) {
             return {
                 result: null,
@@ -121,7 +117,6 @@ const sandbox = new CodeSandbox({
 
 async function executeCode(template, count = 1) {
     try {
-        console.log(`Executing template with count: ${count}`);
         const result = await sandbox.runCode(template, count);
         return result;
     } catch (error) {

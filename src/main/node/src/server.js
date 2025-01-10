@@ -93,7 +93,15 @@ app.get('*', async (req, res) => {
 
         if(mockType === 'FAKER') {
             const result = await executeCode(content);
-            return res.status(statusCode).json(result);
+            if(result.success){
+                return res.status(statusCode).json(result.result);
+            }else{
+                return res.status(statusCode).json(result.errors);
+            }
+        }else if(mockType === 'XML'){
+            res.set('Content-Type', 'application/xml');
+            console.log(content);
+            return res.status(statusCode).send(content);
         }
 
         return res.status(statusCode).json(content);
