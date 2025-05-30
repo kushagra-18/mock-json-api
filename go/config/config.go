@@ -33,6 +33,9 @@ type Config struct {
 	GlobalTimeWindowSeconds  int `mapstructure:"GLOBAL_TIME_WINDOW_SECONDS"`
 
 	// DefaultTeamID uint   `mapstructure:"DEFAULT_TEAM_ID"` // Uncomment if needed
+
+	GeminiAPIKey  string `mapstructure:"GEMINI_API_KEY"`
+	GeminiModelName string `mapstructure:"GEMINI_MODEL_NAME"`
 }
 
 // LoadConfig reads configuration from file or environment variables.
@@ -81,6 +84,10 @@ func LoadConfig(path string) (config Config, err error) {
     if config.ServerPort == "" {
         config.ServerPort = "8080" // Default port
     }
+
+	if config.GeminiModelName == "" {
+		config.GeminiModelName = "gemini-1.5-flash-latest" // Default model
+	}
 
 	return
 }

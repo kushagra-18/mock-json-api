@@ -24,6 +24,9 @@ Configuration for the application is managed through environment variables, typi
     *   JWT settings (JWT_SECRET_KEY, JWT_EXPIRATION_HOURS)
     *   Application settings (BASE_URL, SERVER_PORT)
     *   Global rate limiting parameters (GLOBAL_MAX_ALLOWED_REQUESTS, GLOBAL_TIME_WINDOW_SECONDS)
+    # Gemini API Configuration
+    GEMINI_API_KEY=your_gemini_api_key_here
+    GEMINI_MODEL_NAME=gemini-1.5-flash-latest # Or your preferred default
 
 ## Dependencies
 
@@ -76,5 +79,27 @@ This Go application aims to replicate the functionality and API endpoints of the
 
 The main mock serving endpoint is accessible via:
 `GET /mock/:teamSlug/:projectSlug/*actualMockPath?token=<your_jwt_token>`
+
+### AI Prompting
+
+A new endpoint is available for interacting with Google's Gemini AI:
+
+*   **Endpoint:** `POST /api/v1/ai/prompt`
+*   **Purpose:** Accepts a user-provided text prompt and returns a JSON response from the Gemini AI model.
+*   **Request Body (JSON):**
+    ```json
+    {
+        "prompt": "Your text prompt for the AI."
+    }
+    ```
+*   **Response Body (JSON):**
+    The endpoint returns a JSON object containing the processed response from the Gemini API.
+    ```json
+    {
+        "text": "The AI's generated text response.",
+        "finish_reason": "STOP"
+        // Other fields like "token_count" might be included in the future.
+    }
+    ```
 
 Refer to the `routes/routes.go` file for a complete list of registered routes and their corresponding controller handlers.
