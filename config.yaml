@@ -1,0 +1,15 @@
+SERVER_PORT: "8080"
+DB_DRIVER: "mysql" # or "postgres"
+DB_HOST: "localhost"
+DB_PORT: "3306" # or "5432" for postgres
+DB_USER: "youruser"
+DB_PASSWORD: "yourpassword"
+DB_NAME: "yourdbname"
+DB_SSL_MODE: "disable" # For Postgres: "disable", "require", "verify-full", etc. For MySQL, often part of DSN params like ?tls=true
+APP_BASE_URL: "http://localhost:8080"
+
+# Pusher (optional, if/when integrated)
+# PUSHER_APP_ID: ""
+# PUSHER_KEY: ""
+# PUSHER_SECRET: ""
+# PUSHER_CLUSTER: ""

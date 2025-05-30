@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+
+# IDE / OS specific
+.vscode/
+.idea/
+*.DS_Store
+*~
+*.swp
+*.swo
+
+# Go build cache / modules (if not needed in image context)
+# vendor/ # if you use go mod vendor and don't want it in the image if already built from cache
+# If you are building in a CI/CD pipeline that always starts fresh, vendor might not be needed in copy.
+# If go mod download is effective, vendor isn't strictly needed to be copied.
+
+# Local configuration files that might contain secrets
+# config.yaml # Add this if you intend to provide config solely via env vars to the container
+# For this exercise, config.yaml is copied by Dockerfile, so it's not ignored.
+# If config.yaml had secrets, it should be here.
+
+# Test files, reports, and development artifacts
+*.test.go
+tests/
+test-results/
+coverage.*
+build/
+dist/
+
+# Environment files (if any, specific to local dev)
+.env
+
+# Binaries or compiled output (builder stage handles this)
+main
+app
+*.exe
+*.out
+
+# Readme or docs if not needed in runtime image
+# README.md
+# docs/

@@ -34,11 +34,11 @@ func NewMockContentHandler(
 		urlService:         urlService,
 		projectService:     projService,
 		requestLogService:  reqLogService,
-	}
-}
+	"go-gin-gorm-api/internal/config" // Added for AppConfig access
+)
 
 const DefaultProjectIDForMock = 1 // Or load from config
-const BaseURLPlaceholder = "example.com" // Replace with actual config later
+// const BaseURLPlaceholder = "example.com" // Will be replaced by config.AppConfig.AppBaseURL
 
 // CreateMock handles POST requests to /api/v1/mock.
 // It creates a URL (if it doesn't exist) and associated mock content.
@@ -115,9 +115,9 @@ func (h *MockContentHandler) CreateMock(c *gin.Context) {
 	// Given the context "urlString + .free. + config.BaseURL", it might be constructing a unique identifier
 	// or a specific routing key rather than a directly callable URL.
 	// Let's stick to the literal interpretation for now, acknowledging it's odd.
-	mockedUrl := fmt.Sprintf("%s.free.%s", urlString, BaseURLPlaceholder)
+	mockedUrl := fmt.Sprintf("%s.free.%s", urlString, config.AppConfig.AppBaseURL)
 	// A more standard approach might be:
-	// mockedUrl := fmt.Sprintf("https://%s/mock/%d%s", BaseURLPlaceholder, finalUrl.ProjectID, finalUrl.URL)
+	// mockedUrl := fmt.Sprintf("https://%s/mock/%d%s", config.AppConfig.AppBaseURL, finalUrl.ProjectID, finalUrl.URL)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"url":         mockedUrl, // The specially constructed "mocked URL" string
