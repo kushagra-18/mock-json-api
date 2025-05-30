@@ -9,10 +9,10 @@
 		<relativePath/> 
 	</parent>
 	<groupId>com.mock_json</groupId>
-	<artifactId>demo</artifactId>
+	<artifactId>mock_json</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging> 
-	<name>Quiz</name>
+	<name>Mock Json</name>
 	<description>Mock JSON API</description>
 	<url/>
 	<licenses>
@@ -34,16 +34,68 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
+			  <exclusions>
+        <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </exclusion>
+    </exclusions>
 		</dependency>
 		<dependency>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-data-rest</artifactId>
 	</dependency>
 <dependency>
-  <groupId>com.pusher</groupId>
-  <artifactId>pusher-http-java</artifactId>
-  <version>1.0.0</version>
+    <groupId>com.pusher</groupId>
+    <artifactId>pusher-http-java</artifactId>
+    <version>1.0.0</version>
+    <exclusions>
+        <exclusion>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </exclusion>
+    </exclusions>
 </dependency>
+
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-api</artifactId>
+    <version>0.11.5</version>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-impl</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-jackson</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
+
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+    <version>4.3.4</version>
+    <exclusions>
+        <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-mongodb</artifactId>
+</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-logging</artifactId>
@@ -57,6 +109,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+			  <exclusions>
+        <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </exclusion>
+    </exclusions>
 		</dependency>
 		<dependency>
     <groupId>javax.validation</groupId>
@@ -74,6 +132,10 @@
     <groupId>jakarta.validation</groupId>
     <artifactId>jakarta.validation-api</artifactId>
     <version>3.0.2</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
 </dependency>
 		<dependency>
     <groupId>org.projectlombok</groupId>
@@ -95,7 +157,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
             <configuration>
-     			<mainClass>com.mock_json.api.MockJsonApplication</mainClass>
+     			<mainClass>com.mock_json.MockJsonApplication</mainClass>
             </configuration>
         </plugin>
         
