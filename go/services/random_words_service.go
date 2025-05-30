@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	// "time" // Only needed for seeding rand if not using Go 1.20+ global seeding
+	"time" // Needed for fallback slug generation
 )
 
 // Predefined lists of words for generating random slugs.

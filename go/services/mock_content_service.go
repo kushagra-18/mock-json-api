@@ -101,11 +101,12 @@ func (s *MockContentService) SelectRandomMockContent(mockContents []models.MockC
 	// For simplicity, if no randomness is specified or applicable, return the first.
 	// A more robust approach would be to check if all randomness values are 0.
 	totalRandomness := int64(0)
-	for _, mc := range mockContents {
-		if mc.Randomness < 0 { // Treat negative randomness as 0
-			mc.Randomness = 0
+	// First pass: sanitize negative randomness and calculate totalRandomness
+	for i := range mockContents {
+		if mockContents[i].Randomness < 0 {
+			mockContents[i].Randomness = 0 // Modify the actual element in the slice
 		}
-		totalRandomness += mc.Randomness
+		totalRandomness += mockContents[i].Randomness
 	}
 
 	// If total randomness is 0, all items are equally likely (or no items with randomness > 0).
@@ -123,17 +124,17 @@ func (s *MockContentService) SelectRandomMockContent(mockContents []models.MockC
 	// Weighted random selection
 	r := rand.Int63n(totalRandomness) // Generates a number between 0 and totalRandomness-1
 	currentSum := int64(0)
-	for _, mc := range mockContents {
-		currentSum += mc.Randomness
+	for i := range mockContents { // Iterate by index to use potentially modified values
+		currentSum += mockContents[i].Randomness
 		if r < currentSum {
-			return &mc
+			return &mockContents[i]
 		}
 	}
 
 	// Fallback, should not be reached if totalRandomness > 0 and list is not empty.
-	// But as a safeguard, return the last element.
+	// But as a safeguard, return a random element if any exist (handles edge case of all zero after sanitizing)
 	if len(mockContents) > 0 {
-		return &mockContents[len(mockContents)-1]
+		return &mockContents[rand.Intn(len(mockContents))] // Fallback to uniform random if loop fails
 	}
 	return nil
 }

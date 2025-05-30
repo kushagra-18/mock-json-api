@@ -53,7 +53,21 @@ func ValidateJWTToken(tokenString string, secretKey string) (*jwt.Token, error) 
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse or validate token: %w", err)
+		return nil, fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	if !token.Valid {
+		// If parsing succeeded but token is not valid (e.g. claims validation failed, expired, etc.)
+		return nil, fmt.Errorf("token is invalid")
+	}
+
+	// Ensure claims are of the expected type and contain required fields
+	claims, ok := token.Claims.(*AppClaims)
+	if !ok {
+		return nil, fmt.Errorf("token claims are not of expected type AppClaims")
+	}
+	if claims.UserID == "" { // Assuming UserID is a required claim
+		return nil, fmt.Errorf("token is missing required custom claim: UserID")
 	}
 
 	return token, nil

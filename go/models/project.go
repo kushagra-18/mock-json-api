@@ -10,5 +10,5 @@ type Project struct {
 	IsForwardProxyActive bool   `gorm:"default:false"`
 	TeamID               uint   // Foreign key for Team
 	Team                 Team   // Belongs to Team
-	ForwardProxy         ForwardProxy `gorm:"foreignKey:ProjectID"` // Has one ForwardProxy
+	ForwardProxy         *ForwardProxy `gorm:"foreignKey:ProjectID"` // Has one ForwardProxy, use pointer
 }
