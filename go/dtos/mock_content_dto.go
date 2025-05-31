@@ -7,7 +7,8 @@ import "mockapi/models" // For models.StatusCode
 type MockContentCreateDTO struct {
 	Name        string  `json:"name" binding:"required"`
 	Description *string `json:"description"`
-	Data        string  `json:"data" binding:"required"` // Assuming data is always required
+	Data        string  `json:"data"` // Data is not required if DslData is provided
+	DslData     *string `json:"dsl_data,omitempty"`
 	Randomness  *int64  `json:"randomness,omitempty"`    // Use omitempty for optional fields with defaults
 	Latency     *int64  `json:"latency,omitempty"`
 }
@@ -19,6 +20,7 @@ type MockContentUpdateDTO struct {
 	Name        *string `json:"name"`
 	Description *string `json:"description"`
 	Data        *string `json:"data"`
+	DslData     *string `json:"dsl_data,omitempty"`
 	Randomness  *int64  `json:"randomness"`
 	Latency     *int64  `json:"latency"`
 }

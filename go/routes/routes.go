@@ -46,6 +46,7 @@ func SetupRoutes(cfg config.Config, db *gorm.DB, redisClient *redis.Client) *gin
 	urlService := services.NewURLService(db, redisService)
 	mockContentService := services.NewMockContentService(db)
 	proxyService := services.NewProxyService(db)
+	fakerService := services.NewFakerService(cfg) // Initialize FakerService
 
 	// AI Prompting Service and Controller
 	geminiAPIKey := cfg.GeminiAPIKey
@@ -122,7 +123,7 @@ func SetupRoutes(cfg config.Config, db *gorm.DB, redisClient *redis.Client) *gin
 		proxyRoutes.PATCH("/forward/active/:projectId", proxyController.UpdateForwardProxyActiveStatus)
 	}
 
-	mockContentController := controllers.NewMockContentController(projectService, mockContentService, urlService, requestLogService, redisService, proxyService, cfg)
+	mockContentController := controllers.NewMockContentController(projectService, mockContentService, urlService, requestLogService, redisService, proxyService, fakerService, cfg)
 	managementMockRoutes := router.Group("/mock")
 	{
 		managementMockRoutes.POST("/:projectSlug", mockContentController.SaveMockContent)
