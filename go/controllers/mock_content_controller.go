@@ -32,6 +32,7 @@ type MockContentController struct {
 	requestLogService  *services.RequestLogService
 	redisService       *services.RedisService
 	proxyService       *services.ProxyService // Added proxyService
+	fakerService       *services.FakerService // Added FakerService
 	jwtSecret          string
 	config             config.Config
 }
@@ -44,6 +45,7 @@ func NewMockContentController(
 	rlService *services.RequestLogService,
 	rService *services.RedisService,
 	pService *services.ProxyService, // Added proxyService
+	fService *services.FakerService, // Added FakerService
 	cfg config.Config,
 ) *MockContentController {
 	return &MockContentController{
@@ -53,6 +55,7 @@ func NewMockContentController(
 		requestLogService:  rlService,
 		redisService:       rService,
 		proxyService:       pService, // Added proxyService
+		fakerService:       fService, // Added FakerService
 		jwtSecret:          cfg.JWTSecretKey, // Store JWT secret from config
 		config:             cfg,
 	}
@@ -107,9 +110,21 @@ func (mcc *MockContentController) SaveMockContent(c *gin.Context) {
 			UrlID:       newURL.ID,
 			Name:        mcDto.Name,
 			Description: utils.StringPointerToString(mcDto.Description),
-			Data:        mcDto.Data,
-			Randomness:  utils.Int64PointerToInt64(mcDto.Randomness),
-			Latency:     utils.Int64PointerToInt64(mcDto.Latency),
+			// Data will be set based on DslData or static Data
+			Randomness: utils.Int64PointerToInt64(mcDto.Randomness),
+			Latency:    utils.Int64PointerToInt64(mcDto.Latency),
+		}
+
+		if mcDto.DslData != nil && *mcDto.DslData != "" {
+			processedData, err := mcc.fakerService.ProcessDSL(*mcDto.DslData)
+			if err != nil {
+				utils.ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to process DSL '%s': %s", *mcDto.DslData, err.Error()))
+				return // Important to stop processing for this request
+			}
+			content.Data = processedData // Store the processed data
+		} else {
+			// If DslData is not present, use the static Data field as before.
+			content.Data = mcDto.Data
 		}
 		mockContentsToSave = append(mockContentsToSave, content)
 	}
@@ -178,13 +193,30 @@ func (mcc *MockContentController) UpdateMockContent(c *gin.Context) {
 			UrlID:       uint(urlID),
 			Name:        utils.StringPointerToString(mcDto.Name),
 			Description: utils.StringPointerToString(mcDto.Description),
-			Data:        utils.StringPointerToString(mcDto.Data),
-			Randomness:  utils.Int64PointerToInt64(mcDto.Randomness),
-			Latency:     utils.Int64PointerToInt64(mcDto.Latency),
+			// Data will be set based on DslData or static Data
+			Randomness: utils.Int64PointerToInt64(mcDto.Randomness),
+			Latency:    utils.Int64PointerToInt64(mcDto.Latency),
 		}
 		if mcDto.ID != nil {
 			content.ID = *mcDto.ID
 			content.BaseModel.ID = *mcDto.ID
+		}
+
+		if mcDto.DslData != nil && *mcDto.DslData != "" {
+			processedData, err := mcc.fakerService.ProcessDSL(*mcDto.DslData)
+			if err != nil {
+				utils.ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to process DSL for update '%s': %s", *mcDto.DslData, err.Error()))
+				return
+			}
+			content.Data = processedData
+		} else if mcDto.Data != nil { // mcDto.Data is *string
+			content.Data = *mcDto.Data // Use static data if DslData is not provided and Data is
+		} else {
+			// If neither DslData nor static mcDto.Data is provided, content.Data will be empty.
+			// This means if an existing mock content is updated without DslData and without static Data,
+			// its Data field will become empty. This is the current behavior based on the DTO structure
+			// and how MockContent models are constructed for update.
+			content.Data = "" // Explicitly set to empty if neither DSL nor static data provided
 		}
 		mockContentsToUpdate = append(mockContentsToUpdate, content)
 	}

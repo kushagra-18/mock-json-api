@@ -36,6 +36,8 @@ type Config struct {
 
 	GeminiAPIKey  string `mapstructure:"GEMINI_API_KEY"`
 	GeminiModelName string `mapstructure:"GEMINI_MODEL_NAME"`
+
+	NodeJSFakerServiceURL string `mapstructure:"NODEJS_FAKER_SERVICE_URL"`
 }
 
 // LoadConfig reads configuration from file or environment variables.
@@ -87,6 +89,11 @@ func LoadConfig(path string) (config Config, err error) {
 
 	if config.GeminiModelName == "" {
 		config.GeminiModelName = "gemini-1.5-flash-latest" // Default model
+	}
+
+	if config.NodeJSFakerServiceURL == "" {
+		config.NodeJSFakerServiceURL = "http://localhost:3001" // Default Node.js Faker service URL
+		log.Printf("NODEJS_FAKER_SERVICE_URL not set, defaulting to %s", config.NodeJSFakerServiceURL)
 	}
 
 	return

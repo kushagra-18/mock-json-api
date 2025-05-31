@@ -10,6 +10,8 @@ const corsOptions = {
     origin: '*',
 };
 
+// Require the new DSL processor
+const { processDslString } = require('./faker_dsl_processor');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -24,6 +26,26 @@ app.use((req, res, next) => {
         return;
     }
     next();
+});
+
+// New route for DSL processing
+app.post('/process-dsl', (req, res) => {
+    const { dsl } = req.body;
+
+    if (typeof dsl !== 'string') {
+        return res.status(400).json({ message: 'Request body must include a "dsl" string.' });
+    }
+
+    try {
+        const result = processDslString(dsl);
+        // The result can be any data type. Express's res.json() will handle serialization.
+        res.status(200).json(result);
+    } catch (error) {
+        // This catch block is for unexpected errors within processDslString itself
+        // Errors handled by processDslString by returning "[ERROR: ...]" will be in `result`
+        console.error("Error in /process-dsl route:", error);
+        res.status(500).json({ message: "Internal server error while processing DSL.", error: error.message });
+    }
 });
 
 app.get('*', async (req, res) => {
