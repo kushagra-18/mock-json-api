@@ -48,10 +48,31 @@ function evaluateFakerDirective(directiveContent) {
     if (argsString !== undefined) { // Arguments were provided in parentheses
       try {
         // Allow empty argsString for functions called with no arguments e.g. {{date.past()}}
-        const rawParsedArgs = argsString.trim() === '' ? [] : JSON.parse(argsString);
+        let rawParsedArgs;
+        if (argsString.trim() === '') {
+          rawParsedArgs = [];
+        } else {
+          // Try to fix common escaping issues before parsing
+          let cleanedArgsString = argsString;
+          
+          // Fix double-escaped quotes like \\\"string\\\" -> \"string\"
+          cleanedArgsString = cleanedArgsString.replace(/\\\\\"/g, '"');
+          
+          // Fix incorrectly escaped quotes in arrays like [\"item\"] -> ["item"]
+          cleanedArgsString = cleanedArgsString.replace(/\[\\"/g, '["').replace(/\\"]/g, '"]').replace(/\\",\s*\\"/g, '", "');
+          
+          rawParsedArgs = JSON.parse(cleanedArgsString);
+        }
+        
         // Ensure parsedArgs is an array for .apply()
         if (Array.isArray(rawParsedArgs)) {
-          parsedArgs = rawParsedArgs;
+          // If the function expects the array as a single argument (like arrayElement),
+          // we need to pass the array as one argument, not spread its elements
+          if (fullPath === 'helpers.arrayElement' || fullPath === 'helpers.arrayElements' || fullPath === 'helpers.weightedArrayElement') {
+            parsedArgs = [rawParsedArgs];
+          } else {
+            parsedArgs = rawParsedArgs;
+          }
         } else {
           parsedArgs = [rawParsedArgs];
         }
@@ -163,6 +184,9 @@ function processDslString(dslString) {
       // Strings are appended directly.
       if (typeof evaluatedValue === 'string') {
         resultParts.push(evaluatedValue);
+      } else if (evaluatedValue instanceof Date) {
+        // Handle Date objects specially - convert to ISO string without quotes
+        resultParts.push(evaluatedValue.toISOString());
       } else {
         resultParts.push(JSON.stringify(evaluatedValue));
       }

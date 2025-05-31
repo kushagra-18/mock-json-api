@@ -38,7 +38,44 @@ app.post('/process-dsl', (req, res) => {
 
     try {
         const result = processDslString(dsl);
-        // The result can be any data type. Express's res.json() will handle serialization.
+        
+        // If the result is a stringified JSON string (wrapped in quotes),
+        // we need to parse it twice to get the actual object
+        if (typeof result === 'string') {
+            // Check if it's a quoted JSON string like "{"key": "value"}"
+            if (result.startsWith('"') && result.endsWith('"')) {
+                try {
+                    // First parse removes the outer quotes
+                    const unquoted = JSON.parse(result);
+                    // Second parse gets the actual object
+                    const parsedResult = JSON.parse(unquoted);
+                    return res.status(200).json(parsedResult);
+                } catch (parseError) {
+                    // If double parsing fails, try single parse
+                    try {
+                        const parsedResult = JSON.parse(result);
+                        return res.status(200).json(parsedResult);
+                    } catch (singleParseError) {
+                        // If all parsing fails, return as string
+                        return res.status(200).json(result);
+                    }
+                }
+            }
+            
+            // Check if it's a regular JSON string
+            if ((result.startsWith('{') && result.endsWith('}')) || 
+                (result.startsWith('[') && result.endsWith(']'))) {
+                try {
+                    const parsedResult = JSON.parse(result);
+                    return res.status(200).json(parsedResult);
+                } catch (parseError) {
+                    // If parsing fails, treat it as a regular string
+                    return res.status(200).json(result);
+                }
+            }
+        }
+        
+        // For other data types, let express handle the serialization
         res.status(200).json(result);
     } catch (error) {
         // This catch block is for unexpected errors within processDslString itself
