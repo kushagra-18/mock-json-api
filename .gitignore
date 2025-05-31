@@ -32,6 +32,11 @@ build/
 ### VS Code ###
 .vscode/
 
+### Go ###
+go/tmp/
+go/bin/
+go/.env
+
 *.log
 *.gz
 

@@ -184,7 +184,7 @@ func (s *URLService) FindByProjectIDAndURL(projectID uint, urlPath string) (*mod
 
     if err != nil {
         if err == gorm.ErrRecordNotFound {
-            return nil, fmt.Errorf("url with path '%s' under project ID %d not found: %w", urlPath, projectID, err)
+            return nil, gorm.ErrRecordNotFound
         }
         return nil, fmt.Errorf("failed to retrieve url with path '%s' under project ID %d: %w", urlPath, projectID, err)
     }

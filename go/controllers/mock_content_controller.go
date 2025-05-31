@@ -52,7 +52,7 @@ func NewMockContentController(
 		urlService:         uService,
 		requestLogService:  rlService,
 		redisService:       rService,
-		proxyService:       pService, // Added proxyService
+		proxyService:       pService,         // Added proxyService
 		jwtSecret:          cfg.JWTSecretKey, // Store JWT secret from config
 		config:             cfg,
 	}
@@ -126,7 +126,7 @@ func (mcc *MockContentController) SaveMockContent(c *gin.Context) {
 
 	responseDTO := struct {
 		URL models.Url `json:"url"`
-	} {
+	}{
 		URL: *newURL,
 	}
 	utils.SuccessResponse(c, http.StatusCreated, responseDTO)
@@ -203,10 +203,17 @@ func (mcc *MockContentController) UpdateMockContent(c *gin.Context) {
 func (mcc *MockContentController) GetMockedJSON(c *gin.Context) {
 	teamSlug := c.Param("teamSlug")
 	projectSlug := c.Param("projectSlug")
-	encodedPathParams := c.Param("wildcardPath")
+	encodedPathParams := c.Query("url")
+	encodedIpAddress := c.Query("ip")
+
+	var ipAddress string
+
+	if encodedIpAddress != "" {
+		ipAddress, _ = utils.DecodeBase64(encodedIpAddress)
+	}
 
 	requestLog := &models.RequestLog{
-		IPAddress: c.ClientIP(),
+		IPAddress: ipAddress,
 		Timestamp: time.Now(),
 		Method:    c.Request.Method,
 		URL:       c.Request.URL.String(),
@@ -214,33 +221,40 @@ func (mcc *MockContentController) GetMockedJSON(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 
-	pathParts := strings.SplitN(strings.TrimPrefix(encodedPathParams, "/"), "/", 2)
-	if len(pathParts) < 1 {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid path structure after project slug.")
-		mcc.finalizeRequestLog(requestLog, http.StatusBadRequest, 0, 0)
-		return
-	}
-
-	actualPath := ""
+	var actualPath string
 	var decodedParams dtos.GetMockedJSONParamsDTO
-	potentialBase64 := pathParts[0]
-	decodedBytes, err := base64.URLEncoding.DecodeString(potentialBase64)
 
-	if err == nil {
-		if errJson := json.Unmarshal(decodedBytes, &decodedParams); errJson != nil {
-			log.Printf("WARN: Failed to unmarshal decoded base64 params: %v. Raw: %s", errJson, string(decodedBytes))
+	// Check if encodedPathParams is base64 encoded
+	if encodedPathParams != "" {
+		decodedBytes, err := base64.URLEncoding.DecodeString(encodedPathParams)
+		if err == nil {
+			if errJson := json.Unmarshal(decodedBytes, &decodedParams); errJson != nil {
+				log.Printf("WARN: Failed to unmarshal decoded base64 params: %v. Raw: %s", errJson, string(decodedBytes))
+			}
+			// Use the wildcard path from the URL
+			wildcardPath := c.Param("wildcardPath")
+			if wildcardPath != "" {
+				actualPath = wildcardPath
+			} else {
+				actualPath = "/"
+			}
+		} else {
+			// Not base64, treat as direct path
+			actualPath = encodedPathParams
+			if !strings.HasPrefix(actualPath, "/") {
+				actualPath = "/" + actualPath
+			}
 		}
-		if len(pathParts) > 1 {
-			actualPath = "/" + pathParts[1]
+	} else {
+		// Use wildcard path if no encoded params
+		wildcardPath := c.Param("wildcardPath")
+		if wildcardPath != "" {
+			actualPath = wildcardPath
 		} else {
 			actualPath = "/"
 		}
-	} else {
-		actualPath = encodedPathParams
-		if !strings.HasPrefix(actualPath, "/") {
-			actualPath = "/" + actualPath
-		}
 	}
+
 	requestLog.URL = actualPath
 
 	globalRateLimitKey := mcc.redisService.CreateRedisKey("ratelimit:global", c.ClientIP())
@@ -259,7 +273,9 @@ func (mcc *MockContentController) GetMockedJSON(c *gin.Context) {
 	project, err := mcc.projectService.GetProjectByTeamSlugAndProjectSlug(teamSlug, projectSlug)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == gorm.ErrRecordNotFound { statusCode = http.StatusNotFound }
+		if err == gorm.ErrRecordNotFound {
+			statusCode = http.StatusNotFound
+		}
 		utils.ErrorResponse(c, statusCode, "Project not found or error fetching project: "+err.Error())
 		mcc.finalizeRequestLog(requestLog, statusCode, 0, 0)
 		return
@@ -318,7 +334,9 @@ func (mcc *MockContentController) GetMockedJSON(c *gin.Context) {
 	urlData, err := mcc.urlService.GetURLByTeamSlugProjectSlugAndPath(teamSlug, projectSlug, actualPath)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if err == gorm.ErrRecordNotFound { statusCode = http.StatusNotFound }
+		if err == gorm.ErrRecordNotFound {
+			statusCode = http.StatusNotFound
+		}
 		utils.ErrorResponse(c, statusCode, "URL not found or error fetching URL: "+err.Error())
 		mcc.finalizeRequestLog(requestLog, statusCode, project.ID, 0)
 		return
@@ -375,16 +393,19 @@ func (mcc *MockContentController) buildTargetURL(baseDomain string, originalReq 
 
 // Helper for DTO optional fields
 func StringPointerToString(s *string) string {
-	if s == nil { return "" }
+	if s == nil {
+		return ""
+	}
 	return *s
 }
 
 func Int64PointerToInt64(i *int64) int64 {
-	if i == nil { return 0 }
+	if i == nil {
+		return 0
+	}
 	return *i
 }
 func BoolPointer(b bool) *bool { return &b }
-
 
 // getStatusCodeInt converts models.StatusCode to an int.
 // This should ideally be a method on models.StatusCode or defined in the models package.
@@ -392,57 +413,57 @@ func (mcc *MockContentController) getStatusCodeInt(statusCode models.StatusCode)
 	// This is a simplified map. A more robust solution would be in models/common.go
 	// and cover all defined status codes.
 	statusMapping := map[models.StatusCode]int{
-		models.StatusOK:                   http.StatusOK,
-		models.StatusCreated:              http.StatusCreated,
-		models.StatusAccepted:             http.StatusAccepted,
-		models.StatusNonAuthoritativeInfo: 203, // http.StatusNonAuthoritativeInformation,
-		models.StatusNoContent:            http.StatusNoContent,
-		models.StatusResetContent:         http.StatusResetContent,
-		models.StatusPartialContent:       http.StatusPartialContent,
-		models.StatusMovedPermanently:     http.StatusMovedPermanently,
-		models.StatusFound:                http.StatusFound,
-		models.StatusSeeOther:             http.StatusSeeOther,
-		models.StatusNotModified:          http.StatusNotModified,
-		models.StatusTemporaryRedirect:    http.StatusTemporaryRedirect,
-		models.StatusPermanentRedirect:    http.StatusPermanentRedirect,
-		models.StatusBadRequest:           http.StatusBadRequest,
-		models.StatusUnauthorized:         http.StatusUnauthorized,
-		models.StatusPaymentRequired:      http.StatusPaymentRequired,
-		models.StatusForbidden:            http.StatusForbidden,
-		models.StatusNotFound:             http.StatusNotFound,
-		models.StatusMethodNotAllowed:     http.StatusMethodNotAllowed,
-		models.StatusNotAcceptable:        http.StatusNotAcceptable,
-		models.StatusProxyAuthRequired:    http.StatusProxyAuthRequired,
-		models.StatusRequestTimeout:       http.StatusRequestTimeout,
-		models.StatusConflict:             http.StatusConflict,
-		models.StatusGone:                 http.StatusGone,
-		models.StatusLengthRequired:       http.StatusLengthRequired,
-		models.StatusPreconditionFailed:   http.StatusPreconditionFailed,
-		models.StatusRequestEntityTooLarge: http.StatusRequestEntityTooLarge,
-		models.StatusRequestURITooLong:    http.StatusRequestURITooLong,
-		models.StatusUnsupportedMediaType: http.StatusUnsupportedMediaType,
-		models.StatusRequestedRangeNotSatisfiable: http.StatusRequestedRangeNotSatisfiable,
-		models.StatusExpectationFailed:    http.StatusExpectationFailed,
-		models.StatusTeapot:               http.StatusTeapot,
-		models.StatusUnprocessableEntity:  http.StatusUnprocessableEntity,
-		models.StatusLocked:               http.StatusLocked,
-		models.StatusFailedDependency:     http.StatusFailedDependency,
-		models.StatusTooEarly:             http.StatusTooEarly,
-		models.StatusUpgradeRequired:      http.StatusUpgradeRequired,
-		models.StatusPreconditionRequired: http.StatusPreconditionRequired,
-		models.StatusTooManyRequests:      http.StatusTooManyRequests,
-		models.StatusRequestHeaderFieldsTooLarge: http.StatusRequestHeaderFieldsTooLarge,
-		models.StatusUnavailableForLegalReasons: http.StatusUnavailableForLegalReasons,
-		models.StatusInternalServerError:  http.StatusInternalServerError,
-		models.StatusNotImplemented:       http.StatusNotImplemented,
-		models.StatusBadGateway:           http.StatusBadGateway,
-		models.StatusServiceUnavailable:   http.StatusServiceUnavailable,
-		models.StatusGatewayTimeout:       http.StatusGatewayTimeout,
-		models.StatusHTTPVersionNotSupported: http.StatusHTTPVersionNotSupported,
-		models.StatusVariantAlsoNegotiates: http.StatusVariantAlsoNegotiates,
-		models.StatusInsufficientStorage:  http.StatusInsufficientStorage,
-		models.StatusLoopDetected:         http.StatusLoopDetected,
-		models.StatusNotExtended:          http.StatusNotExtended,
+		models.StatusOK:                            http.StatusOK,
+		models.StatusCreated:                       http.StatusCreated,
+		models.StatusAccepted:                      http.StatusAccepted,
+		models.StatusNonAuthoritativeInfo:          203, // http.StatusNonAuthoritativeInformation,
+		models.StatusNoContent:                     http.StatusNoContent,
+		models.StatusResetContent:                  http.StatusResetContent,
+		models.StatusPartialContent:                http.StatusPartialContent,
+		models.StatusMovedPermanently:              http.StatusMovedPermanently,
+		models.StatusFound:                         http.StatusFound,
+		models.StatusSeeOther:                      http.StatusSeeOther,
+		models.StatusNotModified:                   http.StatusNotModified,
+		models.StatusTemporaryRedirect:             http.StatusTemporaryRedirect,
+		models.StatusPermanentRedirect:             http.StatusPermanentRedirect,
+		models.StatusBadRequest:                    http.StatusBadRequest,
+		models.StatusUnauthorized:                  http.StatusUnauthorized,
+		models.StatusPaymentRequired:               http.StatusPaymentRequired,
+		models.StatusForbidden:                     http.StatusForbidden,
+		models.StatusNotFound:                      http.StatusNotFound,
+		models.StatusMethodNotAllowed:              http.StatusMethodNotAllowed,
+		models.StatusNotAcceptable:                 http.StatusNotAcceptable,
+		models.StatusProxyAuthRequired:             http.StatusProxyAuthRequired,
+		models.StatusRequestTimeout:                http.StatusRequestTimeout,
+		models.StatusConflict:                      http.StatusConflict,
+		models.StatusGone:                          http.StatusGone,
+		models.StatusLengthRequired:                http.StatusLengthRequired,
+		models.StatusPreconditionFailed:            http.StatusPreconditionFailed,
+		models.StatusRequestEntityTooLarge:         http.StatusRequestEntityTooLarge,
+		models.StatusRequestURITooLong:             http.StatusRequestURITooLong,
+		models.StatusUnsupportedMediaType:          http.StatusUnsupportedMediaType,
+		models.StatusRequestedRangeNotSatisfiable:  http.StatusRequestedRangeNotSatisfiable,
+		models.StatusExpectationFailed:             http.StatusExpectationFailed,
+		models.StatusTeapot:                        http.StatusTeapot,
+		models.StatusUnprocessableEntity:           http.StatusUnprocessableEntity,
+		models.StatusLocked:                        http.StatusLocked,
+		models.StatusFailedDependency:              http.StatusFailedDependency,
+		models.StatusTooEarly:                      http.StatusTooEarly,
+		models.StatusUpgradeRequired:               http.StatusUpgradeRequired,
+		models.StatusPreconditionRequired:          http.StatusPreconditionRequired,
+		models.StatusTooManyRequests:               http.StatusTooManyRequests,
+		models.StatusRequestHeaderFieldsTooLarge:   http.StatusRequestHeaderFieldsTooLarge,
+		models.StatusUnavailableForLegalReasons:    http.StatusUnavailableForLegalReasons,
+		models.StatusInternalServerError:           http.StatusInternalServerError,
+		models.StatusNotImplemented:                http.StatusNotImplemented,
+		models.StatusBadGateway:                    http.StatusBadGateway,
+		models.StatusServiceUnavailable:            http.StatusServiceUnavailable,
+		models.StatusGatewayTimeout:                http.StatusGatewayTimeout,
+		models.StatusHTTPVersionNotSupported:       http.StatusHTTPVersionNotSupported,
+		models.StatusVariantAlsoNegotiates:         http.StatusVariantAlsoNegotiates,
+		models.StatusInsufficientStorage:           http.StatusInsufficientStorage,
+		models.StatusLoopDetected:                  http.StatusLoopDetected,
+		models.StatusNotExtended:                   http.StatusNotExtended,
 		models.StatusNetworkAuthenticationRequired: http.StatusNetworkAuthenticationRequired,
 	}
 	val, ok := statusMapping[statusCode]
