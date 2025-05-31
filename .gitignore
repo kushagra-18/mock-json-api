@@ -32,7 +32,15 @@ build/
 ### VS Code ###
 .vscode/
 
+### Go ###
+go/tmp/
+go/bin/
+go/.env
+
 *.log
 *.gz
+*.exe
+
+*mockapi
 
 env.properties

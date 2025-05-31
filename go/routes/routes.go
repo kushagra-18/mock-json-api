@@ -9,7 +9,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
-	"google.golang.org/genai" // For genai.Client and genai.ClientConfig
+	"google.golang.org/genai"
 	"gorm.io/gorm"
 
 	"mockapi/config"
@@ -75,7 +75,6 @@ func SetupRoutes(cfg config.Config, db *gorm.DB, redisClient *redis.Client) *gin
 
 	aiPromptController := controllers.NewAIPromptController(aiPromptService)
 
-
 	// --- Define Routes ---
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "UP", "timestamp": time.Now()})
@@ -83,56 +82,65 @@ func SetupRoutes(cfg config.Config, db *gorm.DB, redisClient *redis.Client) *gin
 
 	apiV1 := router.Group("/api/v1")
 	{
+		// Home
 		homeController := controllers.NewHomeController()
 		apiV1.GET("/home", homeController.Home)
 
-		if aiPromptService != nil { // Only register AI route if service is available
+		// AI Prompt
+		if aiPromptService != nil {
 			apiV1.POST("/ai/prompt", aiPromptController.HandleAIPrompt)
 		} else {
 			apiV1.POST("/ai/prompt", func(c *gin.Context) {
 				c.JSON(http.StatusServiceUnavailable, gin.H{
-					"status": "error",
+					"status":  "error",
 					"message": "AI service is not configured or available.",
 				})
 			})
 		}
+
+		// Team
+		teamController := controllers.NewTeamController(teamService)
+		apiV1.GET("/team", teamController.GetTeamInfo)
+
+		// Project
+		projectController := controllers.NewProjectController(projectService, randomWordsService, requestLogService, teamService)
+		projectRoutes := apiV1.Group("/project")
+		{
+			projectRoutes.POST("/free", projectController.CreateFreeProject)
+			projectRoutes.POST("/free/fast-forward", projectController.CreateFreeFastForwardProject)
+			projectRoutes.GET("/:projectSlug", projectController.GetProjectBySlug)
+		}
+
+		// URL
+		urlController := controllers.NewURLController(urlService)
+		urlRoutes := apiV1.Group("/url")
+		{
+			urlRoutes.PATCH("/:urlId", urlController.UpdateURLInfo)
+			urlRoutes.GET("/:urlId", urlController.GetURLDetails)
+		}
+
+		// Proxy
+		proxyController := controllers.NewProxyController(proxyService, projectService)
+		proxyRoutes := apiV1.Group("/proxy")
+		{
+			proxyRoutes.POST("/forward", proxyController.SaveForwardProxy)
+			proxyRoutes.PATCH("/forward/active/:projectId", proxyController.UpdateForwardProxyActiveStatus)
+		}
+
+		// Mock Content
+		mockContentController := controllers.NewMockContentController(projectService, mockContentService, urlService, requestLogService, redisService, proxyService, fakerService, cfg)
+		managementMockRoutes := apiV1.Group("/mock")
+		{
+			managementMockRoutes.POST("/:projectSlug", mockContentController.SaveMockContent)
+			managementMockRoutes.PATCH("/:projectSlug/:urlId", mockContentController.UpdateMockContent)
+		}
+
+		// Protected Mock JSON (with JWT middleware)
+		authMiddleware := middleware.JWTAuthMiddleware(cfg.JWTSecretKey)
+		apiV1.GET("/mock/:teamSlug/:projectSlug", authMiddleware, mockContentController.GetMockedJSON)
 	}
 
-	teamController := controllers.NewTeamController(teamService)
-	router.GET("/team", teamController.GetTeamInfo)
-
-	projectController := controllers.NewProjectController(projectService, randomWordsService, requestLogService, teamService)
-	projectRoutes := router.Group("/project")
-	{
-		projectRoutes.POST("/free", projectController.CreateFreeProject)
-		projectRoutes.POST("/free/fast-forward", projectController.CreateFreeFastForwardProject)
-		projectRoutes.GET("/:projectSlug", projectController.GetProjectBySlug)
-	}
-
-	urlController := controllers.NewURLController(urlService)
-	urlRoutes := router.Group("/url")
-	{
-		urlRoutes.PATCH("/:urlId", urlController.UpdateURLInfo)
-		urlRoutes.GET("/:urlId", urlController.GetURLDetails)
-	}
-
-	proxyController := controllers.NewProxyController(proxyService, projectService)
-	proxyRoutes := router.Group("/proxy")
-	{
-		proxyRoutes.POST("/forward", proxyController.SaveForwardProxy)
-		proxyRoutes.PATCH("/forward/active/:projectId", proxyController.UpdateForwardProxyActiveStatus)
-	}
-
-	mockContentController := controllers.NewMockContentController(projectService, mockContentService, urlService, requestLogService, redisService, proxyService, fakerService, cfg)
-	managementMockRoutes := router.Group("/mock")
-	{
-		managementMockRoutes.POST("/:projectSlug", mockContentController.SaveMockContent)
-		managementMockRoutes.PATCH("/:projectSlug/:urlId", mockContentController.UpdateMockContent)
-	}
-
-	authMiddleware := middleware.JWTAuthMiddleware(cfg.JWTSecretKey)
-	router.Any("/mock/:teamSlug/:projectSlug/*wildcardPath", authMiddleware, mockContentController.GetMockedJSON)
-
+	// Catch-all for 404
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"code": "PAGE_NOT_FOUND", "message": "Page not found"})
 	})

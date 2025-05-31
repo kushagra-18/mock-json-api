@@ -3,9 +3,10 @@ package services
 import (
 	"fmt"
 
-	"gorm.io/gorm"
 	"mockapi/models" // Assuming module name is mockapi
 	"mockapi/utils"  // For GenerateRandomString or similar if needed for ChannelID
+
+	"gorm.io/gorm"
 )
 
 // ProjectService handles business logic related to projects.
@@ -35,7 +36,7 @@ func (s *ProjectService) GetProjectBySlug(slug string) (*models.Project, error) 
 	var project models.Project
 	if err := s.DB.Where("slug = ?", slug).First(&project).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("project with slug '%s' not found: %w", slug, err)
+			return nil, gorm.ErrRecordNotFound 
 		}
 		return nil, fmt.Errorf("failed to retrieve project with slug '%s': %w", slug, err)
 	}
