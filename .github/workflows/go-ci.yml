@@ -1,0 +1,32 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ main ] # Or your default branch
+    paths:
+      - 'go/**'
+      - '.github/workflows/go-ci.yml'
+  pull_request:
+    branches: [ main ] # Or your default branch
+    paths:
+      - 'go/**'
+      - '.github/workflows/go-ci.yml'
+
+jobs:
+  test_go:
+    name: Test Go
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.20' # Specify your Go version
+
+      - name: Run Go tests
+        working-directory: ./go
+        run: go test ./...
+        # This command runs all tests in the current directory and its subdirectories.
+        # It will pick up the new controller tests and any existing Go tests.
