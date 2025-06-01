@@ -1,0 +1,44 @@
+# Basic Syntax & Directives
+
+The core of the data template language is the "directive." A directive is a placeholder that gets replaced with generated data.
+
+## Directive Format
+
+Directives are written by calling Faker.js modules and their methods, enclosed in double curly braces:
+
+```
+&\#123;&\#123;moduleName.methodName()&\#125;&\#125;
+```
+
+Or, if the Faker.js item is a property (less common, most are methods):
+```
+&\#123;&\#123;moduleName.propertyName&\#125;&\#125;
+```
+
+**Examples:**
+
+-   `{{person.firstName()}}`: Generates a random first name.
+-   `{{internet.email()}}`: Generates a random email address.
+-   `{{location.city()}}`: Generates a random city name.
+-   `{{date.past()}}`: Generates a recent past date.
+
+## How it Works
+
+When you submit a template, the system scans for these `{{...}}` blocks. For each one it finds:
+1.  It identifies the Faker.js `moduleName` and `methodName` (or `propertyName`).
+2.  It calls that Faker.js function.
+3.  It replaces the entire `{{...}}` block with the data returned by Faker.js.
+
+**Example Template:**
+
+```
+My name is &\#123;&\#123;person.firstName()&\#125;&\#125; and I live in &\#123;&\#123;location.city()&\#125;&\#125;.
+```
+
+**Possible Output:**
+
+```
+My name is Sarah and I live in North Robertsontown.
+```
+
+This simple mechanism is the foundation for all data generation. The next sections will cover how to pass arguments, generate arrays, and create structured JSON.

@@ -1,0 +1,64 @@
+# Getting Started: Generating Mock Data
+
+This guide explains how to use the mock data generator within the application UI.
+
+## How It Works
+
+You will typically find a designated text area or input field in the UI where you can define a "data template." This template tells our system what kind of mock data you want and in what format. Once you submit your template, the system processes it and returns the generated mock data.
+
+## Your First Data Template
+
+Let's create a simple template. If you want to generate a full name and an email address, you would type the following into the template input field:
+
+```
+Hello &\#123;&\#123;person.fullName()&\#125;&\#125;, your email is &\#123;&\#123;internet.email()&\#125;&\#125;
+```
+
+**What this means:**
+
+-   `{{ ... }}`: These double curly braces denote a placeholder that will be replaced with generated data.
+-   `person.fullName()`: This is a directive that calls the `fullName()` method from the `person` module of Faker.js, which generates a random full name.
+-   `internet.email()`: This calls the `email()` method from the `internet` module to generate a random email address.
+
+**Expected Output (example):**
+
+After submitting this template, you might see output like this:
+
+```
+Hello John Doe, your email is john.doe@example.com
+```
+(The actual data will be random each time)
+
+## Generating JSON Data
+
+Often, you'll want to generate data in a structured JSON format. To do this, you can use the special `JSON.stringify` wrapper around your template.
+
+**Example Template for JSON:**
+
+```
+&\#123;&\#123;JSON.stringify({
+  "id": &\#123;&\#123;number.int({"min": 1, "max": 1000})&\#125;&\#125;,
+  "name": "&\#123;&\#123;person.fullName()&\#125;&\#125;",
+  "email": "&\#123;&\#123;internet.email()&\#125;&\#125;",
+  "age": &\#123;&\#123;number.int({"min": 18, "max": 80})}
+})&\#125;&\#125;
+```
+
+**Expected Output (example):**
+```json
+{
+  "id": 42,
+  "name": "Jane Roe",
+  "email": "jane.roe@example.net",
+  "age": 33
+}
+```
+**Important Notes for JSON:**
+- Notice the `{{JSON.stringify({...})}}` wrapping the entire structure.
+- Inside the structure, Faker directives like `{{person.fullName()}}` are enclosed in quotes if they are meant to be string values in the JSON. Numeric or boolean directives usually are not.
+- `{{number.int({"min": 1, "max": 1000})}}` generates a random integer.
+
+## Next Steps
+Now that you have a basic understanding, you can explore:
+-   **[DSL Syntax](dsl-syntax/index)**: For a detailed look at the template language.
+-   **[Available Faker Modules](faker-modules/index)**: To see all the types of data you can generate.

@@ -1,0 +1,89 @@
+# Creating JSON Objects
+
+To generate structured JSON data, you should use the `{{JSON.stringify({...})}}` wrapper. This ensures that your template output is a valid JSON string.
+
+## `JSON.stringify` Wrapper
+
+The syntax is:
+```
+&\#123;&\#123;JSON.stringify({
+  "key1": "static value",
+  "key2": &\#123;&\#123;faker.directive()&\#125;&\#125;,
+  "key3": "&\#123;&\#123;faker.directiveAsString()&\#125;&\#125;",
+  "nestedObject": {
+    "nestedKey": &\#123;&\#123;faker.directive()&\#125;&\#125;
+  },
+  "arrayKey": [&\#123;&\#123;faker.directive()&\#125;&\#125;, "&\#123;&\#123;faker.directive()&\#125;&\#125;", &\#123;&\#123;faker.directive()&\#125;&\#125; *3]
+})&\#125;&\#125;
+```
+
+**Explanation:**
+
+1.  **Outer Wrapper**: The entire structure is wrapped in `{{JSON.stringify( ... )}}`.
+2.  **Standard JSON Structure**: Inside the parentheses of `JSON.stringify`, you write what looks like a standard JavaScript object literal (which is also valid JSON if keys are quoted and no functions/comments are used).
+3.  **Keys**: Keys must be enclosed in double quotes (e.g., `"key1"`).
+4.  **Values**:
+    *   **Static Values**: Can be strings (in double quotes), numbers, booleans (`true`, `false`), arrays, or nested objects.
+    *   **Faker Directives for Non-String types**: If a Faker directive generates a number, boolean, or you want it to be an object or array directly in the JSON, use it without quotes: `"age": {{number.int({"min": 20})}}`.
+    *   **Faker Directives for String types**: If a Faker directive generates a string and you want it to be a JSON string value, **you must wrap the directive itself in double quotes**: `"name": "{{person.fullName()}}"`.
+    *   **Nested Objects**: You can define nested objects directly.
+    *   **Arrays**: You can define arrays with static values, Faker directives, or use the `*N` multiplier.
+
+## Key Examples:
+
+**1. Simple User Profile:**
+Template:
+```
+&\#123;&\#123;JSON.stringify({
+  "id": &\#123;&\#123;string.uuid()&\#125;&\#125;,
+  "username": "&\#123;&\#123;internet.userName()&\#125;&\#125;",
+  "email": "&\#123;&\#123;internet.email()&\#125;&\#125;",
+  "isActive": &\#123;&\#123;datatype.boolean()&\#125;&\#125;,
+  "age": &\#123;&\#123;number.int({"min": 18, "max": 70})&\#125;&\#125;
+})&\#125;&\#125;
+```
+Expected Output (example):
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "username": "JohnDoe23",
+  "email": "john.doe23@example.com",
+  "isActive": true,
+  "age": 45
+}
+```
+
+**2. Nested Object and Array:**
+Template:
+```
+&\#123;&\#123;JSON.stringify({
+  "post_id": "&\#123;&\#123;string.uuid()&\#125;&\#125;",
+  "author": {
+    "username": "&\#123;&\#123;internet.userName()&\#125;&\#125;",
+    "displayName": "&\#123;&\#123;person.fullName()&\#125;&\#125;"
+  },
+  "tags": &\#123;&\#123;lorem.word()&\#125;&\#125; *3,
+  "content": "&\#123;&\#123;lorem.paragraph()&\#125;&\#125;"
+})&\#125;&\#125;
+```
+Expected Output (example):
+```json
+{
+  "post_id": "abcdef01-2345-6789-abcd-ef0123456789",
+  "author": {
+    "username": "User123",
+    "displayName": "Jane Smith"
+  },
+  "tags": ["lorem", "ipsum", "dolor"],
+  "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+}
+```
+
+## Common Pitfalls:
+-   **Forgetting `JSON.stringify`**: If you define an object-like structure without the wrapper, the output might be an unexpected string like `"[object Object]"` or a malformed representation.
+-   **Quotes around Directives**:
+    -   Use ` "key": "{{faker.string()}}" ` if `faker.string()` produces a string value for JSON.
+    -   Use ` "key": {{faker.number()}} ` if `faker.number()` produces a numeric value for JSON.
+-   **Trailing Commas**: Ensure there are no trailing commas after the last property in an object or the last item in an array, as this is invalid in JSON.
+
+Mastering `JSON.stringify` is crucial for generating complex, well-structured mock data.

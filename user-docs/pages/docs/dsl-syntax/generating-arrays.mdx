@@ -1,0 +1,62 @@
+# Generating Arrays (Multipliers)
+
+You can easily generate arrays of mock data using a multiplier syntax.
+
+## Multiplier Syntax
+
+To generate multiple instances of a Faker.js directive, append `*N` to the closing curly braces, where `N` is the number of items you want in the array.
+
+```
+&\#123;&\#123;moduleName.methodName()&\#125;&\#125; *N
+```
+
+**Examples:**
+
+1.  **Generate an array of 5 random first names:**
+    ```
+    &\#123;&\#123;person.firstName()&\#125;&\#125; *5
+    ```
+    **Expected Output (example):**
+    ```json
+    ["Alice", "Bob", "Charlie", "Diana", "Edward"]
+    ```
+
+2.  **Generate an array of 3 random email addresses:**
+    ```
+    &\#123;&\#123;internet.email()&\#125;&\#125; *3
+    ```
+    **Expected Output (example):**
+    ```json
+    ["user1@example.com", "user2@example.org", "user3@example.net"]
+    ```
+
+## Important Notes:
+
+-   **Output is an Array**: When you use the `*N` multiplier, the output for that specific directive will be a JSON array.
+-   **Context Matters**:
+    -   If a multiplier is used in a plain text template, the array might be stringified (e.g., `["item1","item2"]`).
+    -   If used within a `{{JSON.stringify({...})}}` block, it will correctly form a JSON array as a value for a key.
+
+**Example within `JSON.stringify`:**
+
+Template:
+```
+&\#123;&\#123;JSON.stringify({
+  "user_ids": &\#123;&\#123;string.uuid()&\#125;&\#125; *3,
+  "tags": &\#123;&\#123;lorem.word()&\#125;&\#125; *5
+})&\#125;&\#125;
+```
+
+Expected Output (example):
+```json
+{
+  "user_ids": [
+    "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+    "c3d4e5f6-a7b8-9012-3456-7890abcdef01"
+  ],
+  "tags": ["wordone", "wordtwo", "wordthree", "wordfour", "wordfive"]
+}
+```
+
+The multiplier syntax is a concise way to generate lists of similar mock data items.

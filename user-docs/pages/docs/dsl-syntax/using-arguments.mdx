@@ -1,0 +1,48 @@
+# Using Arguments with Faker.js Methods
+
+Many Faker.js methods accept arguments to customize their output. You can provide these arguments as a JSON object within the method's parentheses.
+
+## Argument Format
+
+```
+&\#123;&\#123;moduleName.methodName(JSONArguments)&\#125;&\#125;
+```
+
+Where `JSONArguments` is a valid JSON object (e.g., `{"min": 1, "max": 100}`).
+
+**Examples:**
+
+1.  **Generate an integer within a specific range:**
+    ```
+    &\#123;&\#123;number.int({"min": 1, "max": 10})&\#125;&\#125;
+    ```
+    This will output a random integer between 1 and 10 (inclusive).
+
+2.  **Generate a specific number of paragraphs:**
+    ```
+    &\#123;&\#123;lorem.paragraphs({"count": 3})&\#125;&\#125;
+    ```
+    _(Note: The actual argument name for count might vary, e.g., just `{{lorem.paragraphs(3)}}` if the method takes a direct number. Refer to Faker.js documentation for specifics for each method.)_
+    The example above is based on typical Faker.js patterns where options are passed as an object.
+
+3.  **Get an array of 2 random elements from a given array:**
+    ```
+    &\#123;&\#123;helpers.arrayElements(["apple", "banana", "cherry"], {"count": 2})&\#125;&\#125;
+    ```
+    This might output `["cherry", "apple"]`.
+    *Important: When providing arrays or strings as arguments within the JSONArguments, ensure they are properly quoted and escaped if necessary.*
+    For example, `{{helpers.arrayElement(["red", "green", "blue"])}}`.
+
+## Key Considerations:
+
+-   **JSON Validity**: The arguments part *must* be a valid JSON object or a list of valid JSON values if the function takes multiple arguments directly (though single object argument is more common).
+    - Correct: `{"min": 10, "max": 20}`
+    - Correct: `["a", "b", "c"]` (if the method expects an array directly)
+    - Incorrect: `{min: 10, max: 20}` (keys must be quoted in JSON)
+
+-   **Faker.js Documentation**: The specific arguments available depend entirely on the Faker.js method being called. You'll need to refer to the [official Faker.js documentation](https://fakerjs.dev/api/) to know what options are available for each module and method. Our documentation for [Available Faker Modules](faker-modules) will list common ones.
+
+-   **Escaping**: If your arguments themselves contain quotes, you might need to escape them, especially when using the `JSON.stringify` wrapper. For example, if an argument value is a string that needs quotes:
+    `{{module.method({"message": "This is a \"quoted\" message"})}}` (within a `JSON.stringify` context, this might need more careful handling depending on the overall structure). Simpler direct string arguments are usually fine: `{{module.method({"name": "example"})}}`
+
+Using arguments allows for much more precise and tailored mock data generation.

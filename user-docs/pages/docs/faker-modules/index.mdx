@@ -1,0 +1,28 @@
+# Available Faker.js Modules
+
+Faker.js is organized into modules, each providing functions to generate specific types of data. Below is a list of commonly used modules. Click on a module name to see some of its popular methods and examples.
+
+**Core Modules (adapted from your README):**
+
+| Module                                   | Description             | Example Methods (from README)        |
+| :--------------------------------------- | :---------------------- | :----------------------------------- |
+| [person](./person)                       | Person-related data     | `fullName()`, `firstName()`, `lastName()` |
+| [internet](./internet)                   | Internet/web data       | `email()`, `userName()`, `url()`    |
+| [location](./location)                   | Geographic data         | `city()`, `country()`, `latitude()` |
+| [date](./date)                           | Date/time data          | `recent()`, `past()`, `future()`     |
+| [number](./number)                       | Numeric data            | `int()`, `float()`                   |
+| [string](./string)                       | String data             | `uuid()`, `alphanumeric()`           |
+| [lorem](./lorem)                         | Lorem ipsum text        | `paragraph()`, `sentence()`, `word()`|
+| [datatype](./datatype)                   | Data types              | `boolean()`, `json()`, `array()`     |
+| [image](./image)                         | Image URLs              | `url()`, `avatar()`                  |
+| [helpers](./helpers)                     | Utility functions       | `arrayElement()`, `randomize()`    |
+| [commerce](./commerce)                   | E-commerce data       | `productName()` (example from README) |
+| _(and many more...)_                     |                         |                                      |
+
+**Note on `commerce` module:** The README mentioned `commerce.productName()`. While `commerce` is a valid Faker.js module, the specific list above was taken directly from the provided table. We'll add a page for `commerce` if it's commonly used.
+
+**Using Module Methods in Templates:**
+
+You call these module methods using the `{{moduleName.methodName()}}` syntax. For example, to get a random city, you'd use `{{location.city()}}`.
+
+For the most comprehensive and up-to-date list of all available Faker.js modules and their methods, please refer to the [official Faker.js documentation](https://fakerjs.dev/api/). This guide focuses on the most common ones as presented in the project's README.

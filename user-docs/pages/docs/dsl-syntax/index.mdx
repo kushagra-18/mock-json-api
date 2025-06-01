@@ -1,0 +1,14 @@
+# Understanding the Data Template Syntax (DSL)
+
+The Data Template system uses a simple Domain Specific Language (DSL) based on Faker.js directives. This allows you to specify exactly what kind of mock data you need.
+
+## Core Idea
+You embed Faker.js calls within double curly braces: `{{module.method(arguments)}}`. The system replaces these placeholders with the generated data.
+
+### Topics:
+-   **[Basic Syntax & Directives](basic-syntax)**: The fundamental format `{{module.method()}}`.
+-   **[Using Arguments](using-arguments)**: How to pass arguments to Faker.js methods like `{{number.int({"min": 1, "max": 100})}}`.
+-   **[Generating Arrays (Multipliers)](generating-arrays)**: Using the `*N` syntax like `{{person.firstName()}} *5`.
+-   **[Creating JSON Objects (JSON.stringify)](creating-json-objects)**: Using the `{{JSON.stringify({...})}}` wrapper for structured JSON output.
+
+This syntax is designed to be straightforward while providing the full power of Faker.js for your data mocking needs.
